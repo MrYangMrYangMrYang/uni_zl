@@ -38,10 +38,70 @@ module.exports = (vm) => {
 		return Promise.reject(config)
 	})
 
+	// ================== 新增：递归处理图片路径的函数 ==================
+	function processImages(data) {
+		if (!data || typeof data !== 'object') return data;
+		
+		// 处理数组
+		if (Array.isArray(data)) {
+			data.forEach((item, index) => {
+				data[index] = processImages(item);
+			});
+			return data;
+		}
+		
+		// 处理对象
+		Object.keys(data).forEach(key => {
+			const value = data[key];
+			
+			// 处理字符串类型的值
+			if (typeof value === 'string') {
+				// 常见的图片字段名列表
+				const imageFields = [
+					'image', 'images', 'avatar', 'thumb', 'icon', 'logo', 
+					'pic', 'cover', 'photo', 'img', 'headimg', 'head_img',
+					'avatar_text'  // 加上你的 avatar_text 字段
+				];
+				
+				// 判断是否是图片字段
+				if (imageFields.includes(key) || key.includes('image') || key.includes('img') || key.includes('avatar')) {
+					if (value.includes('www.fastadmin.com')) {
+						data[key] = value.replace('http://www.fastadmin.com', '');
+						// #ifdef H5
+						console.log(`H5替换图片路径: ${value} -> ${data[key]}`); // 调试用，可删除
+						// #endif
+					}
+				}
+				
+				// 处理富文本内容中的图片
+				if (key === 'content' && value.includes('www.fastadmin.com')) {
+					data[key] = value.replace(/http:\/\/www\.fastadmin\.com/g, '');
+				}
+			}
+			
+			// 递归处理嵌套的对象或数组
+			if (value && typeof value === 'object') {
+				data[key] = processImages(value);
+			}
+		});
+		
+		return data;
+	}
+	// ================== 新增函数结束 ==================
+
 	// 响应拦截
 	uni.$u.http.interceptors.response.use((response) => {
 		/* 对响应成功做点什么 可使用async await 做异步操作*/
 		const data = response.data
+
+		// ================== 新增：处理图片路径 ==================
+		// 只在 H5 模式下处理，小程序不需要（因为小程序用的是完整域名）
+		// #ifdef H5
+		if (data && data.data) {
+			data.data = processImages(data.data);
+		}
+		// #endif
+		// ================== 新增结束 ==================
 
 		// 自定义参数
 		// const custom = response.config?.custom

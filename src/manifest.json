@@ -77,6 +77,14 @@
         "usingComponents" : true
     },
     "h5" : {
-        "template" : "templateH5.html"
+        "template" : "templateH5.html",
+        "router" : {
+            "mode" : "history",
+            "base" : "/"
+        },
+        "devServer" : {
+            "https" : false
+        },
+        "title" : "zl"
     }
 }
