@@ -1,559 +1,621 @@
 <template>
 	<view class="comlist">
-		<!-- 评论列表 -->
 		<view class="list" v-if="comlist.length > 0">
-			<view class="item" v-for="(item, index) in comlist">
-				<!-- 基本信息 -->
-				<view class="business">
-					<!-- 头像 -->
-					<navigator :url="`/pages/business/user?busid=${item.busid}`" class="avatar">
-						<image mode="aspectFit" :src="item.business.avatar_text"></image>
+			<view class="item" v-for="(item, index) in comlist" :key="index">
+				<!-- 评论头部：头像 + 用户信息 + 时间 -->
+				<view class="item-header">
+					<navigator :url="`/pages/business/user?busid=${item.busid}`" class="avatar-link">
+						<image class="avatar" mode="aspectFill" :src="item.business.avatar_text"></image>
 					</navigator>
-					<!-- 用户 -->
-					<view class="base">
-						<view class="name" style="justify-content: flex-start">
-							<view class="nickname" style="font-size:1.2em;">{{item.business.nickname}}</view>
-							
-							<u-tag style="margin-top:-3.5px !important;margin-left:10px;" v-if="item.busid == ftrid" type="error" plain size="mini" text="楼主"></u-tag>
-						
-							<u-tag style="margin-top:-3.5px !important;margin-left:10px;" v-else-if="status == '1' && cnrid && item.status =='1'" plain size="mini" text="已采纳"></u-tag>
-							
-							<view style="margin-left:10px;" class="createtime">{{item.createtime_text}}</view>
+					<view class="item-author">
+						<view class="author-name-row">
+							<text class="author-name">{{item.business.nickname}}</text>
+							<!-- 楼主标识 -->
+							<u-tag v-if="item.busid == ftrid" text="楼主" type="error" plain size="mini"></u-tag>
+							<!-- 已采纳标识 -->
+							<u-tag v-else-if="status == '1' && cnrid && item.status =='1'" text="已采纳" type="success" plain size="mini"></u-tag>
 						</view>
-						<view class="desc" style="margin-top:6px;">{{item.business.lable}}</view>
+						<text class="author-desc">{{item.business.lable || '暂无简介'}}</text>
 					</view>
+					<text class="item-time">{{item.createtime_text}}</text>
 				</view>
 
-				<!-- 详细内容 -->
-				<view class="content">@{{item.parent_text}}：{{item.content}}</view>
+				<!-- 评论内容 -->
+				<view class="item-content">
+					<text v-if="item.parent_text" class="reply-to">@{{item.parent_text}}：</text>{{item.content}}
+				</view>
 
-				<!-- 操作 -->
-				<view class="action">
-					<view class="left">
-						<view class="tag">
-							<u-tag @click="LikeToggle(item)" v-if="item.like_status" :text="`取消 ${item.likes_count > 0 ? item.likes_count : ''}`" type="success" icon="thumb-up"></u-tag>
-							<u-tag @click="LikeToggle(item)" v-else :text="`点赞 ${item.likes_count > 0 ? item.likes_count : ''}`" type="success" plain icon="thumb-up"></u-tag>
+				<!-- 底部操作栏：点赞 + 展开/收起回复 + 更多 -->
+				<view class="item-footer">
+					<view class="footer-left">
+						<view class="action-btn like-btn" @click="LikeToggle(item)">
+							<u-icon :name="item.like_status ? 'thumb-up-fill' : 'thumb-up'" :color="item.like_status ? '#19be6b' : '#999'" size="18"></u-icon>
+							<text :class="{ 'active': item.like_status }">{{ item.likes_count > 0 ? item.likes_count : '点赞' }}</text>
 						</view>
-						<view class="comment" @click="CommentToggle(index)">
-							<u-icon name="chat" size="25"></u-icon>
-							<view style="display:flex;" v-if="item.comment_count > 0 ">
-								展开{{item.comment_count}}条回复
-								<u-icon v-if="item.comment_count > 0 && item.show" name="arrow-up"></u-icon>
-								<u-icon v-else name="arrow-down"></u-icon>
-							</view>
-							<view v-else>
-								暂无更多
-							</view>
+						<view class="action-btn comment-btn" @click="CommentToggle(index)">
+							<u-icon name="chat" :color="item.show ? '#19be6b' : '#999'" size="18"></u-icon>
+							<text v-if="item.comment_count > 0">展开{{item.comment_count}}条回复</text>
+							<text v-else>暂无回复</text>
+							<u-icon :name="item.show ? 'arrow-up' : 'arrow-down'" size="12" color="#999"></u-icon>
 						</view>
 					</view>
-					<view class="right">
-						<view class="operation">
-							<u-icon name="more-dot-fill" size="20" @click="answers(item)"></u-icon>
+					<view class="footer-right">
+						<view class="more-btn" @click="answers(item)">
+							<u-icon name="more-dot-fill" size="22" color="#999"></u-icon>
 						</view>
 					</view>
 				</view>
 
-				<!-- 子评论组件 -->
-				<comment v-if="item.comment_count > 0 && item.show" :postid="item.postid" :pid="item.id" :busid="item.busid" :brid="brid" :ftrid="ftrid" :status="status" :cnrid="cnrid"></comment>
+				<!-- 递归渲染子评论 -->
+				<comment 
+					v-if="item.comment_count > 0 && item.show" 
+					:postid="item.postid"
+					:pid="item.id"
+					:busid="item.busid"
+					:brid="brid"
+					:ftrid="ftrid"
+					:status="status"
+					:cnrid="cnrid"
+				></comment>
 			</view>
 		</view>
 
-		<!-- 弹出层 -->
-		<u-popup :show="MenuShow" @close="MenuShow = false">
+		<!-- 操作菜单弹出层 -->
+		<u-popup :show="MenuShow" @close="MenuShow = false" round="10">
 			<view class="menu">
-				<view class="grid" style="margin:15px auto;">
-					<u-grid :border="true" style="justify-content: center;">
-						<u-grid-item @click="AnswerShow = true" v-if="accept != ftrid">
-							<u-icon name="edit-pen-fill" size="35"></u-icon>
-							<u--text type="warning" text="评论" align="center"></u--text>
-						</u-grid-item>
-						<u-grid-item v-if="brid == ftrid && accept != ftrid">
-							<u-icon name="checkmark" size="35"></u-icon>
-							<u--text v-if="status == '1' && cnrid && comstatus =='1'" type="success" text="已采纳" align="center"></u--text>
-							<u--text v-else-if="status == '1' && cnrid" type="success" text="已解决" align="center"></u--text>
-							<u--text v-else  @click="select" type="success" text="采纳" align="center"></u--text>
-						</u-grid-item>
-						<u-grid-item v-if="brid == ftrid"  @click="delcom">
-							<u-icon name="trash-fill" size="35"></u-icon>
-							<u--text type="error" text="删除" align="center"></u--text>
-						</u-grid-item>
-					</u-grid>
+				<view class="menu-grid">
+					<!-- 评论按钮（不能评论自己） -->
+					<view class="menu-item" @click="AnswerShow = true; MenuShow = false" v-if="brid != accept">
+						<view class="menu-icon comment-icon">
+							<u-icon name="edit-pen-fill" size="28" color="#ffffff"></u-icon>
+						</view>
+						<text class="menu-text">评论</text>
+					</view>
+					<!-- 采纳按钮（仅帖子作者可见，且不能采纳自己） -->
+					<view class="menu-item" v-if="brid == ftrid && accept != ftrid">
+						<view class="menu-icon accept-icon">
+							<u-icon name="checkmark" size="28" color="#ffffff"></u-icon>
+						</view>
+						<text class="menu-text" v-if="status == '1' && cnrid && comstatus =='1'">已采纳</text>
+						<text class="menu-text" v-else-if="status == '1' && cnrid">已解决</text>
+						<text class="menu-text" v-else @click="select">采纳</text>
+					</view>
+					<!-- 删除按钮（帖子作者或评论者本人可删除） -->
+					<view class="menu-item" v-if="brid == ftrid || brid == accept" @click="delcom">
+						<view class="menu-icon delete-icon">
+							<u-icon name="trash-fill" size="28" color="#ffffff"></u-icon>
+						</view>
+						<text class="menu-text">删除</text>
+					</view>
 				</view>
-				<u-button class="btn" type="error" text="取消" @click="MenuShow = false"></u-button>
+				<u-button :customStyle="{color: '#0173de', border: '2rpx solid #0173de', backgroundColor: '#fff'}" shape="circle" text="取消" @click="MenuShow = false"></u-button>
 			</view>
 		</u-popup>
 
-		<!-- 回答弹出层 -->
-		<u-popup :show="AnswerShow" @close="AnswerShow = false">
+		<!-- 评论输入弹出层 -->
+		<u-popup :show="AnswerShow" @close="AnswerShow = false" round="10">
             <view class="answer">
-				<u--form labelPosition="top" labelWidth="150" :model="answer" :rules="rules" ref="answer">
-					<!-- 描述 -->
-					<u-form-item
-						label="回答描述："
-						prop="content"
-						ref="content"
-					>
-						<u--textarea v-model="answer.content" placeholder="请输入回答描述"></u--textarea>
+				<view class="answer-header">
+					<text class="answer-title">撰写评论</text>
+					<u-icon name="close" size="20" color="#999" @click="AnswerShow = false"></u-icon>
+				</view>
+				<u--form labelPosition="top" :model="answer" :rules="rules" ref="answer">
+					<u-form-item prop="content" ref="content">
+						<u--textarea v-model="answer.content" placeholder="请输入您的评论..." count height="150"></u--textarea>
 					</u-form-item>
-	
-					<view class="btn">
-						<u-button type="primary" text="提交答案" formType="submit" @click="submit"></u-button>
-					</view>
+					<u-button type="primary" shape="circle" @click="submit" :disabled="!answer.content" :customStyle="{background: 'linear-gradient(135deg, #0173de, #4cd964)'}">提交评论</u-button>
 				</u--form>
 			</view>
 		</u-popup>
 
-		<!-- 提醒组件 -->
 		<u-toast ref="notice"></u-toast>
 	</view>
 </template>
 
 <script>
-	// 引入自定义组件
-	import comment from '@/components/comment/comment.vue'
+/**
+ * @component comment
+ * @description 评论组件（支持递归嵌套二级评论）
+ * 功能：展示评论列表、点赞/回复/采纳/删除操作、递归渲染子评论
+ * @example <comment :postid="1" :pid="0" :busid="1" :brid="1" :ftrid="1" :status="'0'" :cnrid="0"></comment>
+ */
 	import Vue from 'vue'
 
 	export default {
 		components: {
 			comment: () => import('@/components/comment/comment.vue')
 		},
+		
 		props: {
 			show: {
 				type: Boolean,
 				default: false
 			},
+			/** @type {number} 帖子ID */
 			postid: {
 				type: Number,
 				require: true,
 				default: 0,
 			},
+			/** @type {number} 父级评论ID，0表示一级评论 */
 			pid: {
 				type: Number,
 				require: true,
 				default: 0,
 			},
-			// 评论人id
+			/** @type {number} 被评论的用户ID（用于@提醒） */
 			busid: {
 				type: Number,
 				require: true,
 				default: 0,
 			},
-			//用户本人id
+			/** @type {number} 当前登录用户ID */
 			brid: {
 				type: Number,
 				require: true,
 				default: 0,
 			},
-			//发帖人id
+			/** @type {number} 帖子作者（楼主）的用户ID */
 			ftrid: {
 				type: Number,
 				require: true,
 				default: 0,
 			},
-			//采纳人id
+			/** @type {number} 已采纳的评论ID，0表示未采纳 */
 			cnrid: {
 				type: Number,
 				require: true,
 				default: 0,
 			},
-			//帖子状态
+			/** @type {string} 帖子解决状态：'0'未解决 / '1'已解决 */
 			status: {
 				type: String,
 				require: true,
 				default: 0,
 			},
 		},
+
 		created()
 		{
 			this.CommentData()
 		},
+
 		data()
 		{
 			return {
-				MenuShow:false,
+				MenuShow: false,
 				AnswerShow: false,
 				comid: 0,
 				accept: 0,
-				//评论状态
 				comstatus: '',
-				answer:{
+				answer: {
 					content: '',
 				},
 				comlist: [],
-				rules:{
+				rules: {
 					content: {
 						type: 'string',
 						required: true,
-						message: '请填写回答内容',
+						message: '内容不能为空',
 						trigger: ['blur', 'change']
 					},
 				}
 			}
 		},
+
 		methods:{
-			// 展示子评论显示
+			
+			/**
+			 * 切换子评论展开/收起状态
+			 * @param {number} index - 当前评论在列表中的索引
+			 */
 			CommentToggle(index)
 			{
 				this.comlist[index].show = !this.comlist[index].show
 			},
-			//获取评论数据
+
+			/**
+			 * 获取评论列表数据
+			 * 从后端接口加载指定帖子和父级下的评论
+			 * @returns {Promise<void>}
+			 */
 			async CommentData()
 			{
-				//组装数据
-				var data = {
-					postid: this.postid,
-					pid: this.pid,
-					busid: this.busid ? this.busid : 0
+				try {
+					var data = {
+						postid: this.postid,
+						pid: this.pid,
+						busid: this.busid ? this.busid : 0
+					}
+
+					var result = await uni.$u.http.post('/comment/index', data)
+
+					this.comlist = result.data.length > 0 ? result.data : []
+
+					// 为每条评论添加show属性控制子评论展开状态，Vue.set确保响应式
+					this.comlist.map((item) => {
+						Vue.set(item, 'show', false)
+					})
+				} catch (error) {
+					console.error('CommentData error:', error)
 				}
-
-				var result = await uni.$u.http.post('/comment/index', data)
-
-				this.comlist = result.data.length > 0 ? result.data : []
-
-				this.comlist.map((item) => {
-					//item == js 对象 show js对象下属性 修改js对象
-					//设置响应式数据 到 对象中
-					Vue.set(item, 'show', false)
-				})
 			},
-			//评论点赞状态切换
+
+			/**
+			 * 切换点赞状态
+			 * @param {object} comment - 当前操作的评论对象
+			 * @param {number} comment.id - 评论ID
+			 * @param {boolean} comment.like_status - 当前点赞状态
+			 * @param {number} comment.likes_count - 当前点赞数
+			 */
 			async LikeToggle(comment)
 			{	
-				//判断是否登录
 				if(!this.brid)
 				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: '请先登录'
-					})
+					uni.$toast.error('请先登录')
 					return false
 				}
 				
-				//组装数据
-				var data = {
-					comid: comment.id,
-					postid: this.postid,
-					busid: this.brid
-				}
+				try {
+					var data = {
+						comid: comment.id,
+						postid: this.postid,
+						busid: this.brid
+					}
+					
+					var result = await uni.$u.http.post('/comment/like', data)
+					
+					if(result.code == 0)
+					{
+						uni.$toast.error(result.msg)
+						return false
+					}
+					
+					uni.$toast.success(result.msg)
 				
-				var result = await uni.$u.http.post('/comment/like', data)
-				
-				// return false
-				
-				if(result.code == 0)
-				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: result.msg
-					})
-					return false
-				}else
-				{
-					this.$refs.notice.show({
-						type: 'success',
-						message: result.msg,
-						duration: 500
-					})
-				
-					//修改点赞的状态
+					// 乐观更新UI：立即切换点赞状态和计数
 					comment.like_status = !comment.like_status
-					//修改点赞数
 					comment.likes_count = comment.like_status ? ++comment.likes_count : --comment.likes_count
+				} catch (error) {
+					console.error('LikeToggle error:', error)
+					uni.$toast.error('操作失败，请稍后重试')
 				}
 			},
-			// 进行二级操作
+
+			/**
+			 * 显示操作菜单
+			 * @param {object} comment - 点击的评论对象
+			 * @param {number} comment.id - 评论ID
+			 * @param {number} comment.busid - 评论发布者ID
+			 * @param {string} comment.status - 评论状态
+			 */
 			answers(comment)
 			{
-				//判断是否有登录
 				if(!this.brid)
 				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: '请先登录'
-					})
+					uni.$toast.error('请先登录')
 					return false
 				}
 				
-				this.MenuShow = true		
+				this.MenuShow = true
+				// 记录当前操作的评论信息，供后续删除/采纳使用
 				this.comid = comment.id
 				this.accept = comment.busid
 				this.comstatus = comment.status
 			},
-			//删除评论
+
+			/**
+			 * 删除评论
+			 * 仅评论作者或被评论者可以删除
+			 * @returns {Promise<void>}
+			 */
 			async delcom()
 			{
-				//判断是否登录
 				if(!this.brid)
 				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: '请先登录'
-					})
+					uni.$toast.error('请先登录')
 					return false
 				}
 				
-				//组装数据
-				var data = {
-					postid: this.postid,
-					busid: this.brid,
-					comid: this.comid,
-				}
-				
-				var result = await uni.$u.http.post('/comment/del', data)
-				
-				if(result.code == 0)
-				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: result.msg
-					})
-					return false
-				}
-				
-				this.$refs.notice.show({
-					type: 'success',
-					message: result.msg,
-					duration: 1000
-				})
-							
-				this.MenuShow = false
-				this.AnswerShow = false
-			},
-			//采纳回答
-			async select()
-			{
-				//判断是否登录
-				if(!this.brid)
-				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: '请先登录'
-					})
-					return false
-				}
-				
-				//组装数据
-				var data = {
-					postid: this.postid,
-					comid: this.comid,
-					accept: this.accept
-				}
-				
-				var result = await uni.$u.http.post('/post/select',data)
-				
-				if(result.code == 0)
-				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: result.msg
-					})
-					return false
-				}
-				
-				this.$refs.notice.show({
-					type: 'success',
-					message: result.msg,
-					duration: 1000
-				})
-			
-				this.MenuShow = false
-				this.AnswerShow = false
-				
-				// location.reload()
-			},
-			submit()
-			{
-				//判断是否登录
-				if(!this.brid)
-				{
-					this.$refs.notice.show({
-						type: 'error',
-						message: '请先登录'
-					})
-					return false
-				}
-				//判断是否有通过表单验证
-				this.$refs.answer.validate()
-				.then(async res => {
-					
-					//组装数据
+				try {
 					var data = {
 						postid: this.postid,
-						pid: this.pid,
-						content:this.answer.content,
-						busid: this.busid
+						busid: this.brid,
+						comid: this.comid,
 					}
 					
-					//发起请求
-					var result = await uni.$u.http.post('/post/answer',data)
+					var result = await uni.$u.http.post('/comment/del', data)
 					
 					if(result.code == 0)
 					{
-						this.$refs.notice.show({
-							type: 'error',
-							message: result.msg
-						})
-					
+						uni.$toast.error(result.msg)
 						return false
 					}
 					
-					this.$refs.notice.show({
-						type: 'success',
-						message: result.msg,
-						duration: 1000
-					})
-					
+					uni.$toast.success(result.msg)
+							
 					this.MenuShow = false
 					this.AnswerShow = false
+				} catch (error) {
+					console.error('delcom error:', error)
+					uni.$toast.error('删除失败，请稍后重试')
+				}
+			},
+
+			/**
+			 * 采纳评论（标记为最佳答案）
+			 * 仅帖子作者可以采纳他人的回答
+			 * @returns {Promise<void>}
+			 */
+			async select()
+			{
+				if(!this.brid)
+				{
+					uni.$toast.error('请先登录')
+					return false
+				}
+				
+				try {
+					var data = {
+						postid: this.postid,
+						comid: this.comid,
+						accept: this.accept
+					}
 					
-					// location.reload()
+					var result = await uni.$u.http.post('/post/select',data)
+					
+					if(result.code == 0)
+					{
+						uni.$toast.error(result.msg)
+						return false
+					}
+					
+					uni.$toast.success(result.msg)
+				
+					this.MenuShow = false
+					this.AnswerShow = false
+				} catch (error) {
+					console.error('select error:', error)
+					uni.$toast.error('操作失败，请稍后重试')
+				}
+			},
+
+			/**
+			 * 提交评论
+			 * 先进行表单验证，通过后才发送请求
+			 * @returns {Promise<void>}
+			 */
+			submit()
+			{
+				if(!this.brid)
+				{
+					uni.$toast.error('请先登录')
+					return false
+				}
+
+				this.$refs.answer.validate()
+				.then(async res => {
+					try {
+						var data = {
+							postid: this.postid,
+							pid: this.pid,
+							content:this.answer.content,
+							busid: this.busid
+						}
+						
+						var result = await uni.$u.http.post('/post/answer',data)
+						
+						if(result.code == 0)
+						{
+							uni.$toast.error(result.msg)
+							return false
+						}
+						
+						uni.$toast.success(result.msg)
+						
+						this.MenuShow = false
+						this.AnswerShow = false
+					} catch (error) {
+						console.error('submit error:', error)
+						uni.$toast.error('提交失败，请稍后重试')
+					}
 				})
 				.catch(error => {
 					console.log(error)
-					this.$refs.notice.show({
-						type: 'error',
-						message: '效验失败'
-					})
+					uni.$toast.error('内容不能为空')
 				})
 			}
 		}
 	}
 </script>
 
-<style>
-	.comlist{
-		margin-top:15px;
-		/* background:#e8e8e8; */
-	}
-
+<style lang="scss">
 	/* 评论列表 */
-	.list{
-		width: 100%;
-		margin:0 auto;
+	.comlist {
+		margin-top: 16rpx;
 	}
 
-	.list .item{
-		width:100%;
-		margin:0 auto;
-		margin-bottom:5px;
-		padding:0px;
-		/* background:#e8e8e8; */
-		box-shadow: 0 0 3px 0 rgba(0,78,255,.1);
+	.list .item {
+		margin-bottom: 20rpx;
+		padding: 30rpx;
+		background: #fff;
+		border-radius: 16rpx;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 	}
 
-	.list .item .business{
-		width:100%;
+	/* 评论头部 */
+	.item-header {
+		display: flex;
+		align-items: flex-start;
+
+		.avatar-link {
+			flex-shrink: 0;
+
+			.avatar {
+				width: 72rpx;
+				height: 72rpx;
+				border-radius: 50%;
+				overflow: hidden;
+				background-color: #f5f7fa;
+			}
+		}
+
+		.item-author {
+			flex: 1;
+			margin-left: 20rpx;
+
+			.author-name-row {
+				display: flex;
+				align-items: center;
+
+				.author-name {
+					font-size: 28rpx;
+					font-weight: bold;
+					color: #303133;
+				}
+			}
+
+			.author-desc {
+				font-size: 24rpx;
+				color: #909399;
+				margin-top: 8rpx;
+				display: block;
+			}
+		}
+
+		.item-time {
+			font-size: 22rpx;
+			color: #c0c4cc;
+			flex-shrink: 0;
+		}
+	}
+
+	/* 评论内容 */
+	.item-content {
+		padding: 24rpx 0;
+		font-size: 28rpx;
+		color: #303133;
+		line-height: 1.6;
+		word-break: break-all;
+
+		.reply-to {
+			color: #3c9cff;
+		}
+	}
+
+	/* 底部操作栏 */
+	.item-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-top: 20rpx;
+		border-top: 1rpx solid #f5f5f5;
+
+		.footer-left {
+			display: flex;
+			align-items: center;
+
+			.action-btn {
+				display: flex;
+				align-items: center;
+				padding: 10rpx 20rpx;
+				border-radius: 8rpx;
+				background: #f7f8fa;
+
+				text {
+					font-size: 24rpx;
+					color: #909399;
+					margin-left: 6rpx;
+
+					&.active {
+						color: #19be6b;
+					}
+				}
+			}
+		}
+
+		.footer-right {
+			.more-btn {
+				width: 52rpx;
+				height: 52rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 50%;
+
+				&:active {
+					background: #f5f5f5;
+				}
+			}
+		}
+	}
+
+	/* 操作菜单 */
+	.menu {
+		padding: 30rpx 30rpx 20rpx;
+	}
+
+	.menu-grid {
 		display: flex;
 		justify-content: center;
+	}
+
+	.menu-item {
+		display: flex;
+		flex-direction: column;
 		align-items: center;
-		align-content: center;
+		padding: 20rpx 50rpx;
 	}
 
-	.business .avatar{
-		width:2.5em;
-		height:2.5em;
-		border-radius: 100%;
-		overflow: hidden;
-		margin-right:10px;
-		flex-shrink: 0;
+	/* 菜单图标：圆形渐变背景 */
+	.menu-icon {
+		width: 90rpx;
+		height: 90rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		margin-bottom: 12rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
 	}
 
-	.business .avatar image{
-		width: 100%;
-		height: 100%;
+	.comment-icon {
+		background: linear-gradient(135deg, #0173de, #4cd964);
 	}
 
-	.business .base{
-		width:90%;
-		padding:5px 10px;
-		font-size:.8em;
+	.accept-icon {
+		background: linear-gradient(135deg, #19be6b, #0e9b55);
 	}
 
-	.business .base .name{
-		width:100%;
+	.delete-icon {
+		background: linear-gradient(135deg, #ed4014, #c9360e);
+	}
+
+	.menu-text {
+		font-size: 26rpx;
+		color: #303133;
+		font-weight: 500;
+	}
+
+	/* 评论输入框 */
+	.answer {
+		padding: 40rpx 30rpx;
+	}
+
+	.answer-header {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 30rpx;
 	}
 
-	.business .base .name .nickname{
+	.answer-title {
+		font-size: 34rpx;
 		font-weight: bold;
-		color:#000;
+		color: #303133;
 	}
 
-	.business .base .name .createtime{
-		color:#999;
-	}
-
-	.business .base .desc{
-		color:#999;
-	}
-
-	.item .content{
-		font-size:.9em;
-		color:#303133;
-		margin-bottom:30px;
-	}
-
-	.item .action{
-		display: flex;
-		align-items: center;
-		align-content: center;
-		justify-content: space-between;
-	}
-
-	.item .action .left{
-		display: flex;
-	}
-
-	.item .action .right{
-		display: flex;
-		align-items: flex-end;
-		align-content: flex-end;
-		margin-top:4px;
-	}
-
-	.item .action .tag{
-		margin-right:10px;
-	}
-
-	.item .action .comment{
-		display: flex;
-		align-content: center;
-		align-items: center;
-	}
-
-	/* 弹出菜单 */
-	.menu .grid{
-		margin:20px 0px;
-	}
-
-	.btn{
-		border-radius: 0px;
-	}
-
-	/* 回答内容 */
-	.answer{
-		padding:20px;
-	}
-	
-	.menu .u-grid-item.data-v-99a45d26:first-child{
-		margin: auto;
-		border-bottom: 0;
-		border-right: 0;
-	}
-	.menu .u-grid-item.data-v-99a45d26:nth-child(2){
-		border-left: 0.8px solid #dadbde;
-		border-right: 0.8px solid #dadbde;
-	}
-	.business .base:fir {
-	    padding: 5px 0.5px;
-	}
-	/* 小程序端 */
-	.u-tag--mini.data-v-1481d46d {
-	    margin-top: -3px !important;
-		margin-left: 10px !important;
-	}
-	.u-tag--success--plain.data-v-1481d46d {
-	    margin-left: 0 !important;
+	.answer :deep(.u-form) .u-button {
+		margin-top: 40rpx;
 	}
 </style>

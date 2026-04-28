@@ -1,6 +1,5 @@
 <template>
 	<view class="content">
-		<!-- 滚动信息 -->
 		<u-notice-bar :text="message"></u-notice-bar>
 
 		<JCalendar 
@@ -14,89 +13,138 @@
 		 <view class='count'>
 			<view>本月累积打卡<text class="sum">{{list.length}}</text>天，请再接再厉，继续努力!</view>
 		</view>
-
-		<!-- 提醒组件 -->
-		<u-toast ref="notice"></u-toast>
 	</view>
 </template>
 
 <script>
+/**
+ * business/checkin.vue - 每日签到页
+ *
+ * 功能说明：
+ * - 日历视图展示签到记录
+ * - 点击日期进行签到/补签操作
+ * - 展示连续签到天数和积分奖励
+ *
+ * 使用组件：j-calendar（日历组件）
+ */
 	import JCalendar from '@/components/calendar/j-calendar.vue';
+	import { checkLogin, getUserInfo } from '@/utils/auth.js'
+
 	export default {
 		components: {
             JCalendar
         },
 		created()
 		{
-			//获取当前用户当前任务的签到状态
 			this.getData(this.current);
 		},
 		data()
 		{
 			return {
 				message: '每日签到可以获得超值优惠大奖，并且会获得相应积分',
-				current: parseInt(new Date().getFullYear())+"-"+parseInt(new Date().getMonth() + 1), //本月
-				list: [
-					"2023-07-01",
-					"2023-07-02",
-					"2023-07-03",
-					"2023-07-04",
-					"2023-07-18",
-					"2023-07-19"
-				]
+				current: this.getCurrentMonth(),
+				list: []
 			}
 		},
 		methods: {
-			// 点击签到或补签事件，回调参格式“YYYY-MM-DD”
-			clickSign(day) 
-			{
-				this.list.push(day);
+			getCurrentMonth() {
+				const now = new Date()
+				return now.getFullYear() + '-' + (now.getMonth() + 1)
 			},
-			//切换月份事件，获取当前用户该任务的签到数组
-			getData(date)
+			async clickSign(day) 
 			{
-				let y=date.split('-')[0];
-				let m=date.split('-')[1];
+				if(this.list.includes(day)) {
+					uni.$toast.error('今日已签到，请勿重复签到')
+					return
+				}
 				
-				//模拟数据 只给当前月份添加数据 可以通过后台接口去获取你的打卡数据
-				if(date==this.current)
-				{
-					const num=["01","04","07","13","14","15"],
-					newSign = [],
-					today = new Date().getDate();
-					for(let i=0;i<6;i++)
-					{
-						newSign.push(this.current+"-"+num[i])
+				uni.$toast.loading('签到中...')
+				
+				try {
+					const userInfo = getUserInfo()
+					const result = await uni.$u.http.post('/checkin/sign', {
+						busid: userInfo.id,
+						date: day
+					})
+					
+					if(result.code == 0) {
+						uni.$toast.hideLoading()
+						uni.$toast.error(result.msg)
+						return
 					}
-					this.list = newSign
-				}else
-				{
-					this.list = [];
+					
+					uni.$toast.hideLoading()
+					this.list.push(day)
+					uni.$toast.successAndNavigate('签到成功，积分 +5', '/pages/business/index', true)
+				} catch (error) {
+					uni.$toast.hideLoading()
+					console.error('clickSign error:', error)
+					// 后端接口未实现时的友好提示
+					if(error.statusCode === 404 || (error.data && error.data.indexOf && error.data.indexOf('Not Found') !== -1)) {
+						uni.$toast.error('签到功能暂未开放')
+					} else {
+						uni.$toast.error('签到失败，请稍后重试')
+					}
+				}
+			},
+			async getData(date)
+			{
+				try {
+					const userInfo = getUserInfo()
+					if(!userInfo.id) {
+						this.list = []
+						return
+					}
+					
+					const result = await uni.$u.http.post('/checkin/list', {
+						busid: userInfo.id,
+						month: date
+					}, { custom: { toast: false } })
+					
+					if(result.code == 1 && result.data) {
+						this.list = result.data
+					} else {
+						this.list = []
+					}
+				} catch (error) {
+					console.error('getData error:', error)
+					this.list = []
+					// 后端接口未实现，静默处理不提示用户
+					if(error.statusCode === 404 || (error.data && error.data.indexOf && error.data.indexOf('Not Found') !== -1)) {
+						console.log('签到列表接口暂未开放')
+					}
 				}
 			},
 		}
 	}
 </script>
 
-<style>
+<style lang="scss">
+	.content {
+		background-color: $zl-bg-color;
+		min-height: 100vh;
+		padding-bottom: 40rpx;
+	}
+
 	.count {
-		margin: 10px;
-		padding: 10px;
-		display: flex;
+		margin: 30rpx;
+		padding: 40rpx;
+		background-color: white;
+		border-radius: 20rpx;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 		text-align: center;
-		border-radius: 10px;
-		flex-direction: column;
-		justify-content: center;
-		background-color: #fff;
-		align-items: center;
-	}
+		font-size: $uni-font-size-base;
+		color: $uni-text-color;
 
-	.sum {
-		color: red;
-		font-size: 20px;
-	}
+		.sum {
+			color: #f56c6c;
+			font-size: 48rpx;
+			font-weight: bold;
+			margin: 0 10rpx;
+		}
 
-	.count text {
-		margin: 5px;
+		view {
+			line-height: 1.6;
+		}
 	}
 </style>

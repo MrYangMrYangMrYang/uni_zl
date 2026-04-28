@@ -1,15 +1,25 @@
 <template>
 	<view class="content">
+		<!-- 顶部区域：搜索框 + 分类标签栏 -->
 		<view class='header'>
 			<view class='search'>
-			  <view class='slogan'>知了IT社区-你想了解的这里都有</view>
-			  <u-search :showAction="false" placeholder="搜索你想了解的问题..." v-model="keywords" @search="search"></u-search>
+			  <u-search 
+			  	:showAction="false"
+			  	placeholder="知了IT社区，你想了解的这里都有..."
+			  	v-model="keywords"
+			  	@search="search"
+			  	shape="round"
+			  	bgColor="rgba(255,255,255,0.95)"
+			  	borderColor="transparent"
+			  ></u-search>
 			</view>
+			
+			<!-- 分类标签导航 -->
 			<view class='nav'>
 				<u-tabs 
-					:list="cate" 
-					@click="CateToggle" 
-					scrollable 
+					:list="cateList"
+					@click="handleCateClick"
+					scrollable
 					lineWidth="45"
 					:activeStyle="{
 						color: '#303133',
@@ -25,340 +35,332 @@
 			</view>
 		</view>
 
-		<view class="list" v-if="post.length > 0">
-			<view class="item" v-for="(item, index) in post" :key="index">
-				<view class="business">
-					<navigator :url="`/pages/business/user?busid=${item.busid}`" class="avatar">
-						<image mode="aspectFit" :src="item.business.avatar_text"></image>
-					</navigator>
-					<view class="author">{{item.business.nickname}}</view>
-				</view>
-				
-				<view class="info">
-					<navigator :url="`/pages/post/info?postid=${item.id}`" class="title">{{item.title}}</navigator>
-					<view class="createtime">发布时间：{{item.createtime_text}}</view>
-					<view class="category">分类：{{item.category.name}}</view>
-					
-					<view class="join">
-						<view class="status">{{item.status == '1' && item.accept ? '已解决' : '未解决'}}</view>
-						<view class="point">￥{{item.point}}积分</view>
-						<view class="count">{{item.comment_count}}人参与回复</view>
-					</view>
-				</view>
+		<!-- 帖子列表区域 -->
+		<view class="list">
+			
+			<!-- 骨架屏：首次加载时显示 -->
+			<u-skeleton
+				v-if="isInitialLoading"
+				rows="10"
+				title
+				loading
+				animate
+			></u-skeleton>
+			
+			<!-- 分类切换加载遮罩 -->
+			<view v-else-if="switchingCate" class="switching-overlay">
+				<u-loading-icon mode="circle" size="40"></u-loading-icon>
+				<view style="margin-top: 16rpx; color: #999; font-size: 26rpx;">切换中...</view>
 			</view>
-			<u-loadmore :status="loadStatus" />
+
+			<block v-else>
+				<post-item v-for="(item, index) in list" :key="item.id || index" :item="item" />
+				
+				<u-empty v-if="list.length === 0" mode="list" text="暂无相关帖子"></u-empty>
+				
+				<u-loadmore v-else :status="loadStatus" />
+			</block>
 		</view>
 
-		<!-- 提醒组件 -->
 		<u-toast ref="notice"></u-toast>
 	</view>
 </template>
 
 <script>
+/**
+ * @page index
+ * @description 首页（帖子列表）
+ * 功能：帖子列表展示（分类筛选、关键词搜索）、下拉刷新 + 上拉加载更多、分类数据缓存、骨架屏加载
+ * 使用混入：listMixin（分页加载逻辑）
+ */
+	import { listMixin } from '@/mixins/listMixin'
+	import PostItem from '@/components/PostItem.vue'
+	import { mapState } from 'vuex'
+
 	export default {
-		onLoad()
-		{
-			//获取本地存储
-			var business = uni.getStorageSync('business') ? uni.getStorageSync('business') : {}
-					
-			//覆盖data数据
-			if(Object.getOwnPropertyNames(business).length > 0)
-			{
-				this.business = business
-			}
-			
-			//获取数据
-			this.CateData()
-			this.PostData()
+		
+		mixins: [listMixin],
+		
+		components: {
+			PostItem
 		},
-		data()
-		{
+		
+		data() {
 			return {
-				business:{},
-				post: [],
-				cate: [
-					{name: '全部', id: 0}
-				],
-				cateid: 0,
-				keywords: '',
-				//加载状态
-				loadStatus: 'loadmore',
-				//请求页数
-				page: 1,
-				//请求数据总数
-				total: 0,
-				//每页请求数据数
-				pagesize: 10,
-				//加载是否完成状态
-				isloading: false,
+				cateList: [{ name: '全部', id: 0 }],  // 分类列表（默认含"全部"）
+				cateid: 0,                            // 当前选中的分类ID
+				keywords: '',                         // 搜索关键词
+				isInitialLoading: true,                // 首次加载状态（控制骨架屏）
+				cacheList: {},                        // 分类数据缓存 {cateid: [data]}
+				switchingCate: false                  // 分类切换中状态
 			}
 		},
-		methods:{
-			//下拉刷新
-			onPullDownRefresh()
-			{
-				// 回复默认数据
-				this.page = 1
-				this.total = 0
-				this.isloading = false
-				//清空数据
-				this.post = []
-				//重新发起请求
-				this.PostData(() => uni.stopPullDownRefresh())
-			},
-			//上拉加载
-			onReachBottom()
-			{
-				//判断数据是否请完
-				if (this.page * this.pagesize > this.total){
-					this.$refs.notice.show({
-						type:"default",
-						message:'暂无更多数据'
-					})
-					this.loadStatus = 'nomore'
-					return false
-				} 
-				//判断加载是否完成
-				if (this.isloading==true){
-					return false
-				} 
-				//页面自增
-				this.page++	
-				// //获取数据
-				this.PostData()			
-			},
-			//获取分类数据
-			async CateData()
-			{				
-				//组装数据
-				var data = {}
-
-				var result = await uni.$u.http.post('/post/cate', data)
-
-				if(result.code == 0)
-				{
-					this.$refs.notice.show({
-						type:"error",
-						message:result.msg
-					})
-					return false
+		
+		computed: {
+			...mapState(['userInfo'])
+		},
+		
+		onLoad() {
+			this.fetchCategories()
+			this.getListData()
+		},
+		
+		methods: {
+			
+			/**
+			 * 获取帖子分类列表
+			 * 从后端接口获取所有分类并添加默认的"全部"选项
+			 * @returns {Promise<void>}
+			 */
+			async fetchCategories() {
+				try {
+					const res = await uni.$u.http.post('/post/cate')
+					if (res.code === 1) {
+						this.cateList = [{ name: '全部', id: 0 }, ...res.data]
+					}
+				} catch (error) {
+					console.error('fetchCategories error:', error)
 				}
-
-				this.cate.push(...result.data)
 			},
-			//获取帖子数据
-			async PostData(cb)
-			{	
-				this.isloading = true
+			
+			/**
+			 * 获取帖子列表数据（覆盖listMixin中的同名方法）
+			 * 支持分类筛选、关键词搜索和分页加载
+			 * @returns {Promise<void>}
+			 */
+			async getListData() {
+				this.isLoading = true
 				
-				//组装数据
-				var data = {
-					cateid: this.cateid,
-					keywords: this.keywords,
-					page: this.page
-				}
-
-				var result = await uni.$u.http.post('/post/index', data)
-				
-				this.isloading = false
-				
-				if(result.code == 0)
-				{
-					this.$refs.notice.show({
-						type:"error",
-						message:result.msg
+				try {
+					const res = await uni.$u.http.post('/post/index', {
+						cateid: this.cateid,
+						keywords: this.keywords,
+						page: this.page
 					})
-					return false
+
+					if (res.code === 1) {
+						const newData = res.data || []
+						
+						if (this.page === 1) {
+							// 第一页：直接替换
+							this.list = newData
+							this.cacheList[this.cateid] = newData
+						} else {
+							// 加载更多：合并数据
+							this.list = [...(this.cacheList[this.cateid] || []), ...newData]
+							this.cacheList[this.cateid] = this.list
+						}
+
+						this.total = res.total || (this.list.length + (newData.length < this.pagesize ? 0 : 1))
+						
+						if (this.list.length >= this.total || newData.length < this.pagesize) {
+							this.loadStatus = 'nomore'
+						} else {
+							this.loadStatus = 'loadmore'
+						}
+					} else {
+						this.loadStatus = 'loadmore'
+					}
+				} catch (error) {
+					console.error('getListData error:', error)
+					uni.$toast.error('加载失败，请稍后重试')
+				} finally {
+					this.isInitialLoading = false
+					this.switchingCate = false
+					this.isLoading = false
 				}
-				
-				// 只要数据请求完毕，就立即按需调用 cb 回调函数
-				if(cb){
-					cb()
-				}			
-				//每一次请求都把请求到的新的数据，和上一次的数据做一次合并
-				this.post = [...this.post, ...result.data]
-				this.total = this.post.length				
 			},
-			//分类切换
-			CateToggle(item)
-			{			
+			
+			/**
+			 * 处理分类标签点击事件（带缓存优化）
+			 * 有缓存直接使用，无缓存则请求接口
+			 * @param {object} item - 点击的分类对象 {name, id}
+			 */
+			handleCateClick(item) {
+				if (this.cateid === item.id) return
+				
 				this.cateid = item.id
-				
-				// 回复默认数据
-				this.page = 1
-				this.total = 0
-				this.isloading = false
-				
-				//清空数据
-				this.post = []
-				
-				//重新发起请求
-				this.PostData(() => uni.stopPullDownRefresh())
-			},
-			//搜索
-			search()
-			{
-				//清楚原来的数据
-				this.post = []
-				//请求输入的数据
-				this.PostData()
-			},
-		}
 
+				if (this.cacheList[item.id] && this.cacheList[item.id].length > 0) {
+					// 有缓存：直接使用
+					this.list = this.cacheList[item.id]
+					this.page = Math.ceil(this.list.length / this.pagesize) + 1
+					this.loadStatus = this.list.length >= (this.total || 10) ? 'nomore' : 'loadmore'
+				} else {
+					// 无缓存：请求接口
+					this.switchingCate = true
+					this.refreshList()
+				}
+			},
+			
+			/**
+			 * 执行搜索操作
+			 * 重置页码并重新加载数据
+			 */
+			search() {
+				this.refreshList()
+			}
+		}
 	}
 </script>
 
 
-<style>
-	.content{
-		width:100%;
-		overflow-x: hidden;
-	}
-	.search {
-		height: 220rpx;
-		background-image: url("/static/titlebg.png");
-		background-repeat: no-repeat;
-		background-size: 100% 100%;
-		background-position: center;
-		padding: 0 28rpx;	
-	}
-
-	.slogan {
-		font-size: 46rpx;
-		color: #fff;
-		padding-top: 30rpx;
-		padding-bottom: 30rpx;
-		padding-left: 15rpx;
-	}
-
-	.search-area {
+<style lang="scss">
+	.content {
 		width: 100%;
-		height: 88rpx;
-		background-color: #fff;
-		background-image: url("/static/search.png");
-		background-repeat: no-repeat;
-		background-size: 30rpx 30rpx;
-		background-position: 35rpx 30rpx;
-		border-radius: 11rpx;
-		line-height: 88rpx;
-		text-indent: 78rpx;
-		color: #2f2e2e;
-		font-size: 30rpx;
+		background-color: $zl-bg-color;
+		min-height: 100vh;
+	}
+
+	/* 顶部固定区域 */
+	.header {
+		background-color: white;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+	}
+
+	.search {
+		height: 120rpx;
+		background: $zl-gradient;
+		padding: 0 40rpx;
+		display: flex;
+		align-items: center;
+		box-shadow: 0 4rpx 12rpx rgba(60, 156, 255, 0.3);
 	}
 
 	.nav {
-		display: block;
-		background-color: #f1f6f9;
+		background-color: white;
+		border-bottom: 1rpx solid $zl-border-color;
+	}
+
+	/* 帖子列表 */
+	.list {
+		padding: 20rpx;
 		position: relative;
+
+		/* 分类切换加载遮罩 */
+		.switching-overlay {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 100rpx 0;
+			background-color: rgba(255, 255, 255, 0.8);
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 5;
+			border-radius: 16rpx;
+		}
+
+		.item {
+			display: flex;
+			background-color: white;
+			padding: 24rpx;
+			margin-bottom: 20rpx;
+			border-radius: 16rpx;
+			box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+			transition: all 0.3s;
+
+			&:active {
+				transform: scale(0.98);
+				background-color: $uni-bg-color-hover;
+			}
+		}
 	}
 
-	.nav .nav-item {
-		width: 25%;
-		height: 110rpx;
-		line-height: 110rpx;
-		text-align: center;
-		color: #666;
-		font-size: 30rpx;
-	}
-
-	.nav .active {
-		color: #000;
-		font-weight: 600;
-	}
-
-	.nav .active-line {
-		background-color: #038fff;
-		width: 35rpx;
-		height: 4rpx;
-		position: absolute;
-		top: 86rpx;
-		transition: left 0.2s;
-	}
-
-	.list .item{
-		display: flex;
-		width:100%;
-		padding:10px;
-		margin:0 auto;
-		border-bottom:1px solid #e9e6e6;
-		flex-direction: row;
-	}
-
-	.business{
-		width:20%;
+	/* 用户头像区域 */
+	.business {
+		width: 100rpx;
+		height: 100rpx;
 		flex-shrink: 0;
-		overflow: hidden;
-		border-radius: 10px;
-		margin-right:10px;
+		margin-right: 24rpx;
+
+		.avatar {
+			width: 100%;
+			height: 100%;
+			border-radius: $uni-border-radius-circle;
+			overflow: hidden;
+			background-color: $uni-bg-color-grey;
+
+			image {
+				width: 100%;
+				height: 100%;
+			}
+		}
+
+		.author {
+			display: none;
+		}
 	}
 
-	.avatar{
-		width:100%;
-		height:5em;
-	}
-
-	.avatar image{
-		width:100%;
-		height:100%;
-		border-radius: 10%;
-	}
-
-	.author{
-		text-align: center;
-		font-size:.8em;
-		color:#999;
-		width:100%;
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-
-	.info{
-		font-size:.9em;
-		color:#999;
-	}
-
-	.info .title, .info .createtime, .info .category, .info .status, .info .join{
-		margin-bottom:2px;
-	}
-
-	.info .title{
-		font-size:1.1em;
-		width:95%;
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-		color:#000;
-		text-decoration: underline;
-		font-weight: bold;
-	}
-
-	.info .status{
-		background:#fff8e5;
-		color:#fa3534;
-		padding:1px 2px;
-		border:1px solid #fa3534;
-		border-radius: 3px;
-		margin-right:5px;
-	}
-
-	.info .join{
+	/* 帖子信息区域 */
+	.info {
+		flex: 1;
 		display: flex;
-		align-items: center;
-		align-content: center;
-		color:#fa3534;
-	}
+		flex-direction: column;
 
-	.count{
-		margin-right:10px;
-	}
+		.title {
+			font-size: $uni-font-size-lg;
+			font-weight: bold;
+			color: $uni-text-color;
+			margin-bottom: 12rpx;
+			line-height: 1.4;
+		}
 
-	.info .point{
-		width:4.5em;
-		text-align: center;
-		background:#fff8e5;
-		color:#f19049;
-		padding:2px;
-		margin-right:10px;
-	}
+		.meta-info {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 16rpx;
+			margin-bottom: 16rpx;
+
+			.author-name {
+				font-size: $uni-font-size-sm;
+				color: $zl-primary;
+				font-weight: 500;
+			}
+
+			.createtime, .category {
+				font-size: $uni-font-size-sm;
+				color: $uni-text-color-grey;
+			}
+		}
+
+		/* 底部附加信息 */
+		.join {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-top: auto;
+			padding-top: 16rpx;
+			border-top: 1rpx solid #f5f5f5;
+
+			.status {
+				font-size: 22rpx;
+				padding: 4rpx 12rpx;
+				border-radius: 4rpx;
+				background-color: #f0f9eb;
+				color: #67c23a;
+
+				&.unsolved {
+					background-color: #fef0f0;
+					color: #f56c6c;
+				}
+			}
+
+			.point {
+				font-size: $uni-font-size-sm;
+				color: #e6a23c;
+				font-weight: bold;
+			}
+
+			.count {
+				font-size: 22rpx;
+				color: $uni-text-color-grey;
+			}
+		}
+}
 </style>

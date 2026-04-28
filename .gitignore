@@ -1,24 +1,69 @@
+# ============================================
+# 知了论坛 - Git 忽略配置文件
+# 基于 GitHub gitignore 模板 + Uni-App 项目规范
+# ============================================
+
+# ---------- 操作系统 ----------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ---------- Node.js ----------
 node_modules/
-unpackage/
-dist/
-Uniapp讲义.html
-
-# local env files
-.env.local
-.env.*.local
-
-# Log files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-# Editor directories and files
-.project
-.idea
-.vscode
+# ---------- Uni-App 构建产物 ----------
+unpackage/
+dist/
+
+# ---------- 环境变量 / 敏感配置 ----------
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# ---------- IDE / 编辑器 ----------
+.idea/
+.vscode/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw*
+*.sw?
+.project
+.settings/
+.hbuilderx/
+launch.json
+
+# ---------- 临时文件 & 缓存 ----------
+*.tmp
+*.temp
+*.cache
+*.bak
+*.swp
+*~
+.cache/
+tmp/
+temp/
+
+# ---------- 日志文件 ----------
+logs/
+*.log
+
+# ---------- 文档（非必要）----------
+Uniapp讲义.html
+
+# ---------- 其他 ----------
+coverage/
+.nyc_output/

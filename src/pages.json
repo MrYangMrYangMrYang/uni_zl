@@ -29,12 +29,7 @@
 				"navigationBarTitleText": "基本资料"
 			}
 		},
-		{
-			"path": "pages/business/email",
-			"style": {
-				"navigationBarTitleText": "邮箱认证"
-			}
-		},
+
 		{
 			"path": "pages/post/add",
 			"style": {
@@ -74,7 +69,7 @@
 		{
 			"path": "pages/business/pay",
 			"style": {
-				"navigationBarTitleText": "余额充值"
+				"navigationBarTitleText": "积分充值"
 			}
 		},
 		{

@@ -4,97 +4,107 @@
 		<view class="user">
 			<view class="avatar">
 			<!-- #ifdef H5 || APP-PLUS -->
-				<image v-if="!business.hasOwnProperty('id')" src="/static/logo.png"></image>
-				<image v-else :src="business.avatar_text">
+				<image v-if="!isLogin" src="/static/zl.png"></image>
+				<image v-else :src="userInfo.avatar_text"></image>
 			<!-- #endif -->
 
 			<!-- #ifdef MP-WEIXIN -->
-				<image v-if="business.hasOwnProperty('avatar') && business.avatar" :src="business.avatar_text">
+				<image v-if="isLogin && userInfo.avatar" :src="userInfo.avatar_text"></image>
 				<open-data v-else type="userAvatarUrl"></open-data>
 			<!-- #endif -->
 			</view>
 	  
-			<view class="nickname">{{business.nickname}}</view>
+			<!-- <view class="nickname">{{isLogin ? userInfo.nickname : '未登录'}}</view> -->
 		
 			<!-- #ifdef H5 || APP-PLUS -->
-				<button v-if="!business.hasOwnProperty('id')" class="login" @click="signin">登录</button>
+				<button v-if="!isLogin" class="login" @click="signin">登录</button>
 			<!-- #endif -->
 
 			<!-- #ifdef MP-WEIXIN -->
-				<button v-if="!business.hasOwnProperty('id')" class="login" @click="login">授权登录</button>
+				<button v-if="!isLogin" class="login" @click="login">授权登录</button>
 			<!-- #endif -->
 		</view>
 	  
 		<!-- 有登录的菜单 -->
-		<view class="menulist" v-if="business.hasOwnProperty('id')">
-		  <navigator url="/pages/business/user" class="item">
-			<text>个人主页</text>
-			<image src='/static/row.png'></image>
-		  </navigator>
-		  <navigator url="/pages/business/profile" class="item">
-			<text>基本资料</text>
-			<image src='/static/row.png'></image>
-		  </navigator>
-		  <!-- <navigator url="/pages/business/email" class="item">
-			<text>邮箱验证</text>
-			<image src='/static/row.png'></image>
-		  </navigator> -->
-		  <navigator url="/pages/business/question" class="item">
-			<text>我的提问</text>
-			<image src='/static/row.png'></image>
-		  </navigator>
-		  <navigator url="/pages/business/follow" class="item">
-			<text>我的关注</text>
-			<image src='/static/row.png'></image>
-		  </navigator>
-		 <!-- <navigator url="/pages/business/message" class="item">
-			<text>我的私信</text>
-			<image src='/static/row.png'></image>
-		  </navigator> -->
-		  <navigator url="/pages/business/pay" class="item">
-			<text>余额充值</text>
-			<image src='/static/row.png'></image>
-		  </navigator>
-		  <navigator url="/pages/business/checkin" class="item">
-			<text>每日签到</text>
-			<image src='/static/row.png'></image>
-		  </navigator>
-		  <view class="item" @click="show = true">
-			<text>退出登录</text>
-			<image src='/static/row.png'></image>
-		  </view>
+		<view v-if="isLogin">
+			<!-- 资产展示卡片 -->
+			<view class="asset-card">
+				<view class="asset-item" @click="navTo('/pages/business/pay')">
+					<view class="value">{{userInfo.score || 0}}</view>
+					<view class="label">我的积分</view>
+				</view>
+				<view class="asset-divider"></view>
+				<view class="asset-item" @click="navTo('/pages/business/follow')">
+					<view class="value">{{userInfo.follow_count || 0}}</view>
+					<view class="label">我的关注</view>
+				</view>
+				<view class="asset-divider"></view>
+				<view class="asset-item" @click="navTo('/pages/business/follow?tab=fans')">
+					<view class="value">{{userInfo.fans_count || 0}}</view>
+					<view class="label">我的粉丝</view>
+				</view>
+			</view>
+
+			<!-- 常用功能网格 -->
+			<view class="grid-menu">
+				<u-grid :border="false" col="2">
+					<u-grid-item @click="navTo('/pages/business/user')">
+						<u-icon name="account" :size="26" color="#ff9900"></u-icon>
+						<text class="grid-text">个人主页</text>
+					</u-grid-item>
+					<u-grid-item @click="navTo('/pages/business/profile')">
+						<u-icon name="edit-pen" :size="26" color="#0173de"></u-icon>
+						<text class="grid-text">基本资料</text>
+					</u-grid-item>
+					<u-grid-item @click="navTo('/pages/business/checkin')">
+						<u-icon name="calendar" :size="26" color="#19be6b"></u-icon>
+						<text class="grid-text">每日签到</text>
+					</u-grid-item>
+					<u-grid-item @click="show = true">
+						<u-icon name="share-square" :size="26" color="#909399"></u-icon>
+						<text class="grid-text">退出登录</text>
+					</u-grid-item>
+				</u-grid>
+			</view>
 		</view>
 		
 		<!-- 没有登录的菜单 -->
-		<view class="menulist" v-else @click="toast">
-			<view class="item">
-			  <text>个人主页</text>
-			  <image src='/static/row.png'></image>
+		<view v-else>
+			<!-- 资产展示卡片 -->
+			<view class="asset-card" @click="toast">
+				<view class="asset-item">
+					<view class="value">--</view>
+					<view class="label">我的积分</view>
+				</view>
+				<view class="asset-divider"></view>
+				<view class="asset-item">
+					<view class="value">--</view>
+					<view class="label">我的关注</view>
+				</view>
+				<view class="asset-divider"></view>
+				<view class="asset-item">
+					<view class="value">--</view>
+					<view class="label">我的粉丝</view>
+				</view>
 			</view>
-			<view class="item">
-			  <text>基本资料</text>
-			  <image src='/static/row.png'></image>
+
+			<!-- 常用功能网格 -->
+			<view class="grid-menu">
+				<u-grid :border="false" col="2">
+					<u-grid-item @click="toast">
+						<u-icon name="account" :size="26" color="#ff9900"></u-icon>
+						<text class="grid-text">个人主页</text>
+					</u-grid-item>
+					<u-grid-item @click="toast">
+						<u-icon name="edit-pen" :size="26" color="#0173de"></u-icon>
+						<text class="grid-text">基本资料</text>
+					</u-grid-item>
+					<u-grid-item @click="toast">
+						<u-icon name="calendar" :size="26" color="#19be6b"></u-icon>
+						<text class="grid-text">每日签到</text>
+					</u-grid-item>
+				</u-grid>
 			</view>
-			<view class="item">
-			  <text>我的提问</text>
-			  <image src='/static/row.png'></image>
-			</view>
-			<view class="item">
-			  <text>我的关注</text>
-			  <image src='/static/row.png'></image>
-			</view>
-			<!-- <view class="item">
-			  <text>我的私信</text>
-			  <image src='/static/row.png'></image>
-			</view> -->
-			<view class="item">
-			  <text>余额充值</text>
-			  <image src='/static/row.png'></image>
-			</view>
-			<view class="item">
-			  <text>每日签到</text>
-			  <image src='/static/row.png'></image>
-			</view>			
 		</view>
 		
 		<!-- 提醒组件 -->
@@ -106,28 +116,83 @@
 </template>
 
 <script>
-	export default {
-		onShow()
-		{
-			//获取本地存储
-			var business = uni.getStorageSync('business') ? uni.getStorageSync('business') : {}
+/**
+ * business/index.vue - 会员中心（个人中心）
+ *
+ * 功能说明：
+ * - 展示用户头像、昵称、登录状态
+ * - 资产数据概览（积分、关注数、粉丝数）
+ * - 功能菜单导航（我的提问、关注、私信、签到等）
+ * - 退出登录确认
+ */
+	import { mapState, mapActions } from 'vuex'
 
-			//覆盖data数据
-			if(Object.getOwnPropertyNames(business).length > 0)
-			{
-				this.business = business
-			}
-		},
+	export default {
 		data()
 		{
 			return {
-				show: false,
-				business: {
-					nickname: '临时用户',
-				}
+				show: false
 			}
 		},
-		 methods:{
+		computed: {
+			...mapState(['userInfo', 'isLogin'])
+		},
+		onShow() {
+			if (this.isLogin) {
+				this.refreshUserInfo()
+				this.fetchFollowData()
+			}
+		},
+		methods:{
+			...mapActions(['logoutSuccess']),
+			// 统一跳转方法
+			navTo(url) {
+				uni.navigateTo({ url })
+			},
+			// 刷新用户信息
+			async refreshUserInfo() {
+				if (!this.isLogin) return
+				const res = await uni.$u.http.post('/user/info', { busid: this.userInfo.id })
+				if (res.code === 1 && res.data.business) {
+					const updated = {
+						...res.data.business,
+						follow_count: this.userInfo.follow_count || 0,
+						fans_count: this.userInfo.fans_count || 0
+					}
+					this.$store.dispatch('loginSuccess', updated)
+				}
+			},
+			// 获取关注和粉丝数量
+			async fetchFollowData() {
+				if (!this.isLogin || !this.userInfo.id) return
+				
+				try {
+					const busid = this.userInfo.id
+					
+					const dedupeList = (list) => {
+						if (!list || list.length === 0) return []
+						const seen = new Map()
+						return list.filter(item => {
+							const key = item.business?.id || item.busid || item.id
+							if (seen.has(key)) return false
+							seen.set(key, true)
+							return true
+						})
+					}
+
+					const followRes = await uni.$u.http.post('/user/myattention', { busid }, { custom: { toast: false } })
+					if (followRes.code === 1) {
+						this.$set(this.userInfo, 'follow_count', dedupeList(followRes.data).length)
+					}
+					
+					const fansRes = await uni.$u.http.post('/user/myfans', { busid }, { custom: { toast: false } })
+					if (fansRes.code === 1) {
+						this.$set(this.userInfo, 'fans_count', dedupeList(fansRes.data).length)
+					}
+				} catch (error) {
+					console.error('fetchFollowData error:', error)
+				}
+			},
 			 signin()
 				{
 					uni.$u.route({
@@ -135,155 +200,179 @@
 						params: {openid: 'h5'}
 					})
 				},
-			 login(){
+			 async login(){
 				//微信小程序登录
 				uni.login({
 					provider: 'weixin', //使用微信登录
 					success: async res =>{
-						
-						//先获取code凭证
-						var code = res.code ? res.code : ''
-						
-						if(!code){
-							this.$refs.notice.show({
-								type: 'error',
-								message: '获取登录临时凭证失败'
-							})
-						}
+						try {
+							//先获取code凭证
+							var code = res.code ? res.code : ''
 							
-						//有code就发送请求
-						var result = await uni.$u.http.post('/business/login',{code})
-						
-						if(result.code == 0){
-							this.$refs.notice.show({
-								type: 'error',
-								message: result.msg
-							})
+							if(!code){
+								uni.$toast.error('获取登录临时凭证失败')
+								return false
+							}
+								
+							//有code就发送请求
+							var result = await uni.$u.http.post('/business/login',{code})
 							
-							return false
-						}
-						
-						var openid = result.data.Openid ? result.data.Openid : ''
-						
-						if(openid){		
-							//提醒跳转
-							this.$refs.notice.show({
-								type:'success',
-								message:result.msg,
-								complete(){
-									//授权成功，但没找到人
-									uni.$u.route({
-										url:result.url,
-										params:{
-											openid:openid
-										}
-									})
-								}
-							})						
-						}
-						else{
-							//本地存储
-							//如果返回客户信息，就说明是直接找到这个人
-							uni.setStorageSync('business', result.data)
-							this.business = result.data
+							if(result.code == 0){
+								uni.$toast.error(result.msg)
+								return false
+							}
+							
+							var openid = result.data.Openid ? result.data.Openid : ''
+							
+							if(openid){		
+								uni.$toast.success(result.msg, {
+									complete: () => {
+										uni.$u.route({
+											url:result.url,
+											params:{ openid:openid }
+										})
+									}
+								})							
+							}
+							else{
+								// 使用 Vuex 存储
+								this.$store.dispatch('loginSuccess', result.data)
 
-							//提醒
-							this.$refs.notice.show({
-								type: 'success',
-								message: result.msg
-							})
+								uni.$toast.success(result.msg, {
+									complete: () => {
+										uni.$u.route({ type: 'navigateBack', delta: 1 })
+									}
+								})
+							}
+						} catch (error) {
+							console.error('login error:', error)
+							uni.$toast.error('登录失败，请稍后重试')
 						}
 					},
 					fail: res =>{
 						//登陆失败
 						console.log('登录失败')
 						console.log(res)
+						uni.$toast.error('微信登录失败')
 					}
 				})
 			},
 			logout()
 			{
-				//删除本地存储
-				uni.removeStorageSync('business')
-				//清除本地还渲染的数据，这样就不用刷新界面
-				this.business = {}
+				// 使用 Vuex 登出
+				this.$store.dispatch('logout')
 				//关闭模态框
 				this.show = false
 			},
 			toast()
 			{
-				this.$refs.notice.show({
-					type:'error',
-					message: '请先登录访问'
-				})
+				uni.$toast.error('请先登录访问')
 			}
 		}
 	}
 </script>
 
-<style>
+<style lang="scss">
+	.container {
+		background-color: $zl-bg-color;
+		min-height: 100vh;
+	}
+
 	/* 用户信息 */
 	.user {
 		width: 100%;
-		padding:40rpx 0rpx;
+		padding: 60rpx 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		background: linear-gradient(rgb(1,115,222), rgb(78,169,245));
-		color:white;
+		background: $zl-gradient;
+		color: white;
 	}
 
 	.avatar {
-		width: 200rpx;
-		height: 200rpx;
-		border-radius: 50%;
+		width: 160rpx;
+		height: 160rpx;
+		border-radius: $uni-border-radius-circle;
 		overflow: hidden;
+		border: 4rpx solid rgba(255, 255, 255, 0.3);
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
 	}
 
-	.avatar image{
-		width:100%;
-		height:100%;
-	}
-
-	.nickname{
-		font-size: 30rpx;
-		font-weight: bold;
-		margin: 10rpx 0;
-	}
-
-	.login{
-		width: 120px!important;
-		color: #fff;
-		background-color: #4ea9f5;
-		margin-top: 20rpx;
-		font-size: 30rpx;
-		padding:.5em .2em;
-	}
-
-	/* 菜单 */
-	.menulist{
+	.avatar image {
 		width: 100%;
+		height: 100%;
 	}
 
-	.item{
+	.nickname {
+		font-size: $uni-font-size-lg;
+		font-weight: bold;
+		margin: 20rpx 0;
+	}
+
+	.login {
+		width: 240rpx !important;
+		color: $zl-primary;
+		background-color: white;
+		margin-top: 20rpx;
+		font-size: $uni-font-size-base;
+		border-radius: 40rpx;
+		border: none;
+	}
+
+	/* 资产卡片 */
+	.asset-card {
 		display: flex;
-		flex-direction: row;
-		justify-content: space-between;
-		align-items: center;
-		height: auto;
-		width: auto;
-		padding: 20rpx 50rpx;
-		border-bottom: 20rpx solid rgb(234,234,234);
-		font-size: 26rpx;
-		box-shadow: 0 0 10px #DDD;
+		background-color: white;
+		margin: -40rpx 30rpx 0;
+		padding: 30rpx 0;
+		border-radius: 16rpx;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+		position: relative;
+		z-index: 1;
+
+		.asset-item {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+
+			.value {
+				font-size: 36rpx;
+				font-weight: bold;
+				color: $zl-primary;
+				margin-bottom: 8rpx;
+			}
+
+			.label {
+				font-size: 24rpx;
+				color: $uni-text-color-grey;
+			}
+		}
+
+		.asset-divider {
+			width: 1rpx;
+			height: 60rpx;
+			background-color: #eee;
+			align-self: center;
+		}
 	}
 
-	.item image{
-		height: 36rpx;
-		width: 36rpx;
-	}
-	
-	.u-modal__content__text.data-v-713d0fd3 {
-	    flex: initial !important;
+	/* 网格功能区 */
+	.grid-menu {
+		background-color: white;
+		margin: 20rpx 30rpx;
+		padding: 30rpx 20rpx;
+		border-radius: 16rpx;
+
+		::v-deep .u-grid-item {
+			padding: 30rpx 0 !important;
+		}
+
+		.grid-text {
+			font-size: 26rpx;
+			color: $uni-text-color;
+			margin-top: 16rpx;
+		}
 	}
 </style>

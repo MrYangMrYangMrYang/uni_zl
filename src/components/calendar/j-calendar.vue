@@ -1,42 +1,45 @@
 <template>
-	<!-- 打卡日历页面 -->
 	<view class='all'>
+		<!-- 顶部导航栏：年月显示 + 切换按钮 -->
 		<view class="bar">
-			<!-- 上一个月 -->
 			<view class="previous" @click="changeMonth(-1)">
 				<button class="barbtn">{{langType=='ch'?'上一月':'Last'}}</button>
 			</view>
-			<!-- 显示年月 -->
 			<view class="date">{{nowYear || "--"}} 年 {{nowMonth || "--"}} 月</view>
-			<!-- 下一个月 -->
 			<view class="next" @click="changeMonth(1)">
 				<button class="barbtn">{{langType=='ch'?'下一月':'Nex/'}}</button>
 			</view>
 		</view>
-		<!-- 显示星期 -->
+		
+		<!-- 星期标题行 -->
 		<view class="week-area" >
 			<view class="week-txt" v-for="(item,index) in weeksTxt[langType]" :key="index">{{item}}</view>
 		</view>
 		
+		<!-- 日期网格 -->
 		<view  class="myDateTable">
 			<view v-for="(item,j) in calendarDays" :key="j" class='dateCell'>
+				<!-- 空白占位格 -->
 				<view v-if="item.date==undefined||item.date == null" class='cell'></view>
+				
 				<template v-else>
-					<!-- 已签到日期 -->
+					<!-- 已签到日期：绿色文字 + 白色背景 -->
 					<view v-if="item.isSign == true" class='cell greenColor bgWhite'>
 						{{item.date}}
 					</view>
-					<!-- 漏签 -->
+					
+					<!-- 漏签日期：白框 + 红点标记，可点击补签 -->
 					<view @click="clickSign(item.date,0)" class="cell outSignStyle"  v-else-if="item.isBeforeToday&&item.isThisMonth">
-						<!-- redColor bgGray -->
 						{{item.date}}
 						<view class="redDot"></view>
 					</view>
-					<!-- 今日未签到-->
+					
+					<!-- 今日未签到：蓝色背景 + "签到"文字 -->
 					<view @click="clickSign(item.date,1)" class="cell whiteColor bgBlue" v-else-if="item.date==today&&nowMonth==toMonth&&nowYear==toYear">
 						签到
 					</view>
-					<!-- 当前日期之后 -->
+					
+					<!-- 普通日期 -->
 					<view class="whiteColor cell" v-else>
 						{{item.date}}
 					</view>
@@ -49,77 +52,99 @@
 </template>
 
 <script>
+/**
+ * @component j-calendar
+ * @description 签到日历组件
+ * 功能：月历视图展示、已签到标记、今日签到、补签功能、中英文切换
+ * @example <j-calendar :dataSource="signData" @clickChange="handleSign" @dateChange="handleMonthChange"></j-calendar>
+ */
 	export default {
+		
 		data() {
 			return {
-				calendarDays: [],
-				SignData: [],// 已经签到的数据
-				nowYear: 0, //当前选的年
-				nowMonth: 0, //当前选的月
-				today: parseInt(new Date().getDate()), //系统本日
-				toMonth: parseInt(new Date().getMonth() + 1), //系统本月
-				toYear: parseInt(new Date().getFullYear()), //系统本年
-				weeksTxt: {
+				calendarDays: [],           // 日历格子数据数组
+				SignData: [],               // 已签到的日期数据源
+				nowYear: 0,                 // 当前显示的年份
+				nowMonth: 0,                // 当前显示的月份
+				today: parseInt(new Date().getDate()),
+				toMonth: parseInt(new Date().getMonth() + 1),
+				toYear: parseInt(new Date().getFullYear()),
+				weeksTxt: {                 // 星期标题（支持中英文）
 					ch:['日', '一', '二', '三', '四', '五', '六'],
 					en: ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'],
 				},
 			};
 		},
+		
 		props: {
-			isReplenishSign: { // 是否允许过期补签
+			/** @type {boolean} 是否允许过期补签 */
+			isReplenishSign: {
 				type: Boolean,
 				default: false
 			},
-			isFullCalendar: { // 是否需要填满日历，前后空的格子填入上/下个月的日期
+			/** @type {boolean} 是否填满日历（前后空格显示上月/下月日期） */
+			isFullCalendar: {
 				type: Boolean,
 				default: true
 			},
-			yearMonth: { // 2022-01 这种格式，默认当前年月
+			/** @type {string} 初始显示的年月，格式："2022-01" */
+			yearMonth: {
 				type: String,
 				default: new Date().getFullYear()+'-'+ new Date().getMonth() + 1
 			},
-			dataSource: { //已签到的数据源，例： 5、6号已签到： ["2022-01-05","2022-01-06"]，兼容个位数前可加可不加0
+			/** @type {Array} 已签到的数据源，格式：["2022-01-05","2022-01-06"] */
+			dataSource: {
 				type: Array,
 				default: () => {
 					return []
 				}
 			},
-			langType: { //只是示例一个翻译而已，要想所有都翻译自己可以再加加
+			/** @type {string} 语言类型：'ch'中文 / 'en'英文 */
+			langType: {
 				type: String,
-				default: "ch" //en
+				default: "ch"
 			},
 		},
+
 		created() {
 			if(!(/en|ch/g.test(this.langType))){
-				this.langType='ch'; // 非中英，则固定中文
+				this.langType='ch';
 			}
 			const ymArr=this.yearMonth.split('-');
 			this.buildCalendar(ymArr[0], ymArr[1]);
 			this.onSignDataChange(this.dataSource);
 		},
+		
 		watch: {
 			dataSource: 'onSignDataChange',
 		},
+		
 		methods: {
-			clickSign(date, type) { //type=0补签，type=1当日签到	
+			
+			/**
+			 * 点击签到/补签事件处理
+			 * @param {number} date - 点击的日期（几号）
+			 * @param {number} type - 操作类型：0=补签，1=当日签到
+			 */
+			clickSign(date, type) {	
 				var strTip = "签到";
 				
 				if (type == 0) {
-					if(!this.isReplenishSign){ // 未开启补签，阻止继续执行
+					if(!this.isReplenishSign){
 						console.log("————补签功能未开启————");
 						return;
 					}
 					strTip = "补签";
 				}
-				uni.showToast({
-					title:  date + "号" + strTip + "成功",
-					icon: 'success',
-					position:"bottom",
-				});
-				this.$emit('clickChange', this.nowYear + "-" + this.nowMonth + "-" + date); //传给调用模板页面
-				// 父页面要在clickChange里去修改输入的数据源dataSource，否则视图不更新的!
+				// 触发父组件事件，传递完整日期字符串
+				this.$emit('clickChange', this.nowYear + "-" + this.nowMonth + "-" + date);
 			},
-			//构建日历数据
+			
+			/**
+			 * 构建指定年月的日历数据
+			 * @param {string} y - 年份
+			 * @param {string} m - 月份
+			 */
 			buildCalendar(y, m){
 				this.nowYear = y;
 				this.nowMonth = m;
@@ -129,17 +154,28 @@
 					this.fullCell()
 				}
 			},
-			// 监听到签到数据源改变
+			
+			/**
+			 * 监听签到数据源变化，更新标记
+			 * @param {Array} newData - 新的签到数据
+			 */
 			onSignDataChange(newData, oldData = []) {
 				this.SignData = newData;
 				this.matchSign();
 			},
-			//匹配标记已经签到的日子
+			
+			/**
+			 * 匹配标记已签到的日子
+			 * 遍历签到数据，将对应日期格子的isSign设为true
+			 */
 			matchSign() {
 				var signs = this.SignData;
 				var daysArr = this.calendarDays;
+				
 				for (var i = 0; i < signs.length; i++) {
-					var current = new Date(this.toIOSDate(signs[i])).getTime(); // ios只认/格式的日期
+					// iOS只识别/分隔的日期格式，需转换
+					var current = new Date(this.toIOSDate(signs[i])).getTime();
+					
 					for (var j = 0; j < daysArr.length; j++) {
 						if(current == new Date(this.toIOSDate(daysArr[j].fullDate)).getTime()){
 								daysArr[j].isSign = true;	
@@ -147,32 +183,42 @@
 					}
 				}
 				this.calendarDays = daysArr;
-				// console.log(this.calendarDays );
 			},
-			// 计算当月1号前空了几个格子，把它填充在calendarDays数组的前面
+			
+			/**
+			 * 计算当月1号前需要填充的空白格子数
+			 * @param {number} year - 年份
+			 * @param {number} month - 月份
+			 */
 			calculateEmptyGrids(year, month) {
-				//计算每个月时要清零
 				this.calendarDays = [];
 				const firstDayOfWeek = this.getFirstDayOfWeek(year, month);
 				if (firstDayOfWeek > 0) {
 					for (let i = 0; i < firstDayOfWeek; i++) {
 						this.calendarDays.push({
-							date: null, // 显示的日期
-							fullDate: null, // 日期yyyy-mm-dd格式
-							isBeforeToday: true, // 今日之前
-							isSign: false, // 是否签到
-							isThisMonth:false, // 是本月
+							date: null,
+							fullDate: null,
+							isBeforeToday: true,
+							isSign: false,
+							isThisMonth:false,
 						});
 					}
 				}
 			},
-			// 绘制当月天数占的格子，并把它放到days数组中
+			
+			/**
+			 * 计算当月所有天数的格子数据
+			 * @param {number} year - 年份
+			 * @param {number} month - 月份
+			 */
 			calculateDays(year, month) {
 				const thisMonthDays = this.getMonthDayLength(year, month);
 				const toDate= new Date(this.toYear+'/'+this.toMonth+'/'+this.today);
+				
 				for (let i = 1; i <= thisMonthDays; i++) {
 					const fullDate=year+'-'+month+'-'+ i;
 					const isBeforeToday=new Date(this.toIOSDate(fullDate)) < toDate;
+					
 					this.calendarDays.push({
 						date: i,
 						fullDate,
@@ -181,59 +227,95 @@
 						isThisMonth:true,
 					});
 				}
-				//console.log(this.calendarDays);
 			},
-			// 切换控制年月，上一个月，下一个月
+			
+			/**
+			 * 切换到上/下一月
+			 * @param {number} type - 方向：-1=上一月，1=下一月
+			 */
 			changeMonth(type) {
 				const nowYear = parseInt(this.nowYear);
 				const nowMonth = parseInt(this.nowMonth);
 				const newObj=this.getOperateMonthDate(nowYear,nowMonth,type);
-				this.buildCalendar(newObj.year, newObj.month); // 重新构建日历数据
-				this.$emit('dateChange', this.nowYear + "-" + this.nowMonth); //传给调用模板页面去拿新数据				
+				this.buildCalendar(newObj.year, newObj.month);
+				this.$emit('dateChange', this.nowYear + "-" + this.nowMonth);
 			},
-			// 获取当月共多少天，也就是获取月的最后一天
+			
+			/**
+			 * 获取指定月份的总天数
+			 * 巧妙利用Date构造函数：month参数为0时返回上个月最后一天
+			 * @param {number} year - 年份
+			 * @param {number} month - 月份
+			 * @returns {number} 该月总天数
+			 */
 			getMonthDayLength(year, month) {
 				return new Date(year, month, 0).getDate()
 			},
-			// 获取当月第一天星期几
+			
+			/**
+			 * 获取指定月份某一天是星期几
+			 * @param {number} year - 年份
+			 * @param {number} month - 月份
+			 * @param {number} [day=1] - 日期，默认1号
+			 * @returns {number} 星期几（0=周日，1=周一...6=周六）
+			 */
 			getFirstDayOfWeek(year, month, day=1) {
 				return new Date(Date.UTC(year, month - 1, day)).getDay();
 			},
-			toIOSDate(strDate){ // iso不认识"-"拼接的日期，所以转/
+			
+			/**
+			 * 将日期字符串中的"-"替换为"/"
+			 * iOS不识别"-"分隔的日期格式，必须转换为"/"
+			 * @param {string} strDate - 原始日期字符串（如 "2022-01-05"）
+			 * @returns {string} 转换后的日期字符串（如 "2022/01/05"）
+			 */
+			toIOSDate(strDate){ 
 				return strDate?strDate.replace(/-/g,'/'):strDate;
 			},
-			// 需要填满格子，上/下个月的日期拉出来填满格子
+			
+			/**
+			 * 填满日历格子（将上月末尾和下月开头的日期填入空白位置）
+			 * 使日历始终保持完整的7x6网格布局
+			 */
 			fullCell(){
 				const endDay= this.getMonthDayLength(this.nowYear, this.nowMonth);
 				const beforeEmptyLength = this.getFirstDayOfWeek(this.nowYear, this.nowMonth);
 				const afterEmptyLength =  6 - this.getFirstDayOfWeek(this.nowYear, this.nowMonth, endDay);
 
-
+				// 填充月初空白格：使用上月末尾的日期
 				const last=this.getOperateMonthDate(this.nowYear,this.nowMonth,-1);
 				const lastMonthEndDay=this.getMonthDayLength(last.year, last.month);
+				
 				for (let i = 0; i < beforeEmptyLength; i++) {
 					const date=lastMonthEndDay - beforeEmptyLength + i + 1;
 					this.calendarDays[i].date=date;
 					this.calendarDays[i].fullDate=last.year+"-"+last.month+"-"+date;
 				}
+				
+				// 填充月末空白格：使用下个月开头的日期
 				const next=this.getOperateMonthDate(this.nowYear,this.nowMonth,1);
 				for (let i = 1; i <= afterEmptyLength; i++) {
 					this.calendarDays.push({
-						date: i, // 显示的日期
-						fullDate: next.year+"-"+next.month+"-"+i, // 日期yyyy-mm-dd格式
-						isBeforeToday: false, // 今日之前
-						isSign: false, // 是否签到
-						isThisMonth:false, // 是本月
+						date: i,
+						fullDate: next.year+"-"+next.month+"-"+i,
+						isBeforeToday: false,
+						isSign: false,
+						isThisMonth:false,
 					});
 				}
-				// console.log(beforeEmptyLength,afterEmptyLength,lastMonthEndDay);
-				
-				// console.log(this.calendarDays);
 			},
-			// 获取加/减一个月的日期
+			
+			/**
+			 * 获取加减指定月数后的年月（处理跨年）
+			 * @param {number} yy - 当前年
+			 * @param {number} mm - 当前月
+			 * @param {number} num - 要加减的月数（正数加，负数减）
+			 * @returns {{month: number, year: number}} 结果年月对象
+			 */
 			getOperateMonthDate(yy,mm,num){
-				let month=parseInt(mm) + 	parseInt(num);
+				let month=parseInt(mm) + parseInt(num);
 				let year=parseInt(yy);
+				
 				if(month>12){
 					month=1;
 					year++;
@@ -241,6 +323,7 @@
 					month=12;
 					year--;
 				}
+				
 				return {
 					month,
 					year,
@@ -251,12 +334,11 @@
 </script>
 
 <style>
-	
-
 	.all {
 		margin-top: 20rpx;
 	}
 
+	/* 顶部导航栏 */
 	.all .bar {
 		display: flex;
 		flex-direction: row;
@@ -271,6 +353,7 @@
 		font-size: 12px;
 	}
 
+	/* 星期标题行 */
 	.all .week-area {
 		display: flex;
 		justify-content: space-between;
@@ -280,10 +363,13 @@
 		margin: 10px auto;
 		border-radius: 10px;
 	}
+
 	.all .week-txt {
 		text-align: center;
 		width: 13vw;
 	}
+
+	/* 日期网格：蓝绿渐变背景 */
 	.myDateTable {
 		margin: 0 auto;
 		width: 91vw;
@@ -291,6 +377,7 @@
 		border-radius: 10px;
 		background: linear-gradient(#74AADA, #94db98);
 	}
+
 	.myDateTable .dateCell {
 		width: 13vw;
 		padding: 1vw;
@@ -301,6 +388,7 @@
 		overflow: hidden;
 	}
 
+	/* 日期格子：圆形 */
 	.dateCell .cell {
 		display: flex;
 		border-radius: 50%;
@@ -311,36 +399,23 @@
 		flex-direction: column;
 	}
 
+	/* 文字颜色 */
+	.whiteColor { color: #fff; }
+	.greenColor { color: #01b90b; font-weight: bold; }
 
-	.whiteColor {
-		color: #fff;
-	}
+	/* 背景颜色 */
+	.bgWhite { background-color: #fff; }
+	.bgGray { background-color: rgba(255, 255, 255, 0.42); }
+	.bgBlue { font-size: 14px; background-color: #4b95e6; }
+	.redColor { color: #ff0000; }
 
-	.greenColor {
-		color: #01b90b;
-		font-weight: bold;
-	}
-
-	.bgWhite {
-		background-color: #fff;
-	}
-
-	.bgGray {
-		background-color: rgba(255, 255, 255, 0.42);
-	}
-
-	.bgBlue {
-		font-size: 14px;
-		background-color: #4b95e6;
-	}
-
-	.redColor {
-		color: #ff0000;
-	}
+	/* 漏签日期：白色边框 */
 	.outSignStyle{
 		border:1px solid #ffffff;
 		color: #ffffff;
 	}
+
+	/* 漏签红点标识 */
 	.redDot{
 		width: 3px;
 		height: 3px;
