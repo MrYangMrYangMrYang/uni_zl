@@ -109,10 +109,6 @@
 				} catch (error) {
 					console.error('getData error:', error)
 					this.list = []
-					// 后端接口未实现，静默处理不提示用户
-					if(error.statusCode === 404 || (error.data && error.data.indexOf && error.data.indexOf('Not Found') !== -1)) {
-						console.log('签到列表接口暂未开放')
-					}
 				}
 			},
 		}

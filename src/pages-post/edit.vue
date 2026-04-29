@@ -3,18 +3,18 @@
 		<!-- 头部区域：渐变背景 + 标题描述 -->
 		<view class="header-section">
 			<view class="header-content">
-				<text class="header-title">发布提问</text>
-				<text class="header-desc">描述您的问题，让社区的小伙伴来帮您解答</text>
+				<text class="header-title">修改提问</text>
+				<text class="header-desc">更新您的问题信息，让更多小伙伴来帮您解答</text>
 			</view>
 		</view>
-	  
+
 		<!-- 表单区域 -->
-		<view class="form-section">
+		<view class="form-section" v-if="loaded">
 			<!-- 标题输入项 -->
 			<view class="form-item">
 				<text class="form-label">提问标题</text>
-				<u--input 
-					v-model="post.title" 
+				<u--input
+					v-model="post.title"
 					placeholder="请输入提问标题，让更多人看到"
 					border="surround"
 				></u--input>
@@ -23,8 +23,8 @@
 			<!-- 描述输入项：多行文本域 -->
 			<view class="form-item">
 				<text class="form-label">问题描述</text>
-				<u--textarea 
-					v-model="post.content" 
+				<u--textarea
+					v-model="post.content"
 					placeholder="请详细描述您的问题，便于他人理解并提供帮助"
 					height="200"
 					count
@@ -33,11 +33,11 @@
 				></u--textarea>
 			</view>
 
-			<!-- 分类选择项：点击弹出选择器 -->
+			<!-- 分类选择项 -->
 			<view class="form-item" @click="CateShow = true">
 				<text class="form-label">问题分类</text>
-				<u--input 
-					v-model="post.cate" 
+				<u--input
+					v-model="post.cate"
 					placeholder="请选择问题分类"
 					readonly
 					border="surround"
@@ -48,15 +48,15 @@
 					</template>
 				</u--input>
 			</view>
-			
+
 			<!-- 分类选择器弹出面板 -->
-			<u-picker :show="CateShow" :columns="CateData" keyName="name" @cancel="CateShow = false" @confirm="CateCheck"></u-picker>
+			<u-picker :defaultIndex="CateDefault" :show="CateShow" :columns="CateData" keyName="name" @cancel="CateShow = false" @confirm="CateCheck"></u-picker>
 
 			<!-- 积分输入项 -->
 			<view class="form-item">
 				<text class="form-label">悬赏积分</text>
-				<u--input 
-					v-model="post.point" 
+				<u--input
+					v-model="post.point"
 					placeholder="请输入悬赏积分"
 					border="surround"
 					type="number"
@@ -67,10 +67,16 @@
 				</u--input>
 			</view>
 
-			<!-- 提交按钮：渐变主题色 -->
+			<!-- 提交按钮 -->
 			<view class="submit-btn">
-				<u-button type="primary" shape="circle" text="发布提问" formType="submit" @click="submit" size="large" :customStyle="{background: 'linear-gradient(135deg, #0173de, #4cd964)'}"></u-button>
+				<u-button type="primary" shape="circle" text="提交修改" formType="submit" @click="submit" size="large" :loading="submitting" :customStyle="{background: 'linear-gradient(135deg, #0173de, #4cd964)'}"></u-button>
 			</view>
+		</view>
+
+		<!-- 加载状态 -->
+		<view v-else class="loading-wrap">
+			<u-loading-icon mode="circle" size="40"></u-loading-icon>
+			<text class="loading-text">加载中...</text>
 		</view>
 
 		<u-toast ref="notice"></u-toast>
@@ -79,47 +85,57 @@
 
 <script>
 /**
- * post/add.vue - 发布提问页
+ * post/edit.vue - 修改提问（编辑帖子）
  *
  * 功能说明：
- * - 填写提问标题、问题描述、选择分类、设置悬赏积分
- * - 分类数据从后端动态加载
- * - 表单手动验证（标题/内容/分类/积分非空校验）
- * - 发布成功后自动跳转到帖子详情页
+ * - 加载已有帖子数据并回填表单
+ * - 修改标题、描述、分类、悬赏积分
+ * - 分类选择器自动定位到当前分类
+ * - 手动表单验证
+ * - 修改成功后自动跳转到帖子详情页
  */
 import { checkLogin, getUserInfo } from '@/utils/auth.js'
 
 export default {
-	/**
-	 * 页面生命周期 - onLoad
-	 * 获取当前用户信息并加载分类列表
-	 */
-	onLoad() {
+	onLoad(option) {
+		if (!checkLogin(false)) {
+			uni.$u.route({ type: 'navigateBack', delta: 1 })
+			return
+		}
+
 		this.business = getUserInfo()
-		this.CateList()
+		var postid = option.postid ? option.postid : 0
+		this.postid = postid
+
+		this.initData()
 	},
 
 	data() {
 		return {
-			business: {},             // 当前登录用户信息
-			CateShow: false,          // 分类选择器是否显示
-			CateData: [[]],           // 分类选择器数据源（二维数组格式）
-			post: {                   // 帖子表单数据
-				title: '',            // 提问标题
-				content: '',          // 问题描述
-				point: '',            // 悬赏积分
-				cateid: '',           // 分类ID（提交用）
-				cate: ''              // 分类名称（显示用）
+			postid: 0,
+			business: {},
+			CateShow: false,
+			CateData: [[]],
+			CateDefault: [0],
+			submitting: false,
+			loaded: false,
+			post: {
+				title: '',
+				content: '',
+				point: '',
+				cateid: '',
+				cate: ''
 			}
 		}
 	},
 
 	methods: {
-		/**
-		 * 加载分类列表数据
-		 * 从后端获取所有帖子分类，供选择器使用
-		 * @returns {Promise<void>}
-		 */
+		async initData() {
+			await this.CateList()
+			await this.PostData()
+			this.loaded = true
+		},
+
 		async CateList() {
 			try {
 				var result = await uni.$u.http.post('/post/cate')
@@ -129,7 +145,6 @@ export default {
 					return false
 				}
 
-				// uView picker 组件要求二维数组格式
 				this.CateData = [result.data]
 			} catch (error) {
 				console.error('CateList error:', error)
@@ -137,21 +152,39 @@ export default {
 			}
 		},
 
-		/**
-		 * 分类选择确认回调
-		 * 将选中的分类名称和ID分别保存到表单数据中
-		 * @param {object} e - 选择器返回的对象 {value: [{name, id}]}
-		 */
+		async PostData() {
+			try {
+				var result = await uni.$u.http.post('/post/info', { postid: this.postid })
+
+				if (result.code == 0) {
+					uni.$toast.error(result.msg, {
+						complete: () => {
+							uni.$u.route({ type: 'navigateBack', delta: 1 })
+						}
+					})
+					return false
+				}
+
+				this.post = result.data.post
+				this.post.cate = result.data.post.category.name
+
+				this.CateData[0].map((item, index) => {
+					if (item.id == this.post.cateid) {
+						this.CateDefault = [index]
+					}
+				})
+			} catch (error) {
+				console.error('PostData error:', error)
+				uni.$toast.error('加载失败，请稍后重试')
+			}
+		},
+
 		CateCheck(e) {
 			this.CateShow = false
 			this.post.cate = e.value[0].name
 			this.post.cateid = e.value[0].id
 		},
 
-		/**
-		 * 表单提交处理函数
-		 * 流程：手动验证各字段 → 登录检查 → 组装数据 → 发送请求 → 跳转详情页
-		 */
 		submit() {
 			if (!this.post.title || !this.post.title.trim()) {
 				uni.$toast.error('请填写提问标题')
@@ -172,20 +205,24 @@ export default {
 
 			if (!checkLogin()) return
 
-			this.post.busid = this.business.id
+			this.submitting = true
 
-			uni.$u.http.post('/post/add', this.post)
+			var currentPostid = this.postid
+
+			uni.$u.http.post('/post/edit', this.post)
 				.then(result => {
+					this.submitting = false
+
 					if (result.code == 0) {
 						uni.$toast.error(result.msg)
 						return false
 					}
 
-					getApp().globalData.needRefreshHome = true
-					uni.$toast.successAndNavigate('发布成功', '/pages/index/index', true)
+					uni.$toast.successAndBack('修改成功')
 				})
 				.catch(error => {
-					uni.$toast.error('发布失败，请稍后重试')
+					this.submitting = false
+					uni.$toast.error('提交失败，请稍后重试')
 				})
 		}
 	}
@@ -198,7 +235,6 @@ export default {
 		background-color: #f5f7fa;
 	}
 
-	/* 头部区域 */
 	.header-section {
 		background: $zl-gradient;
 		padding: 40rpx 40rpx 60rpx;
@@ -247,9 +283,9 @@ export default {
 		line-height: 1.5;
 	}
 
-	/* 表单区域 */
 	.form-section {
 		padding: 30rpx;
+		margin-top: -20rpx;
 	}
 
 	.form-item {
@@ -295,5 +331,19 @@ export default {
 			font-weight: 600;
 			height: 90rpx;
 		}
+	}
+
+	.loading-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding-top: 200rpx;
+		gap: 16rpx;
+	}
+
+	.loading-text {
+		font-size: 26rpx;
+		color: #999;
 	}
 </style>

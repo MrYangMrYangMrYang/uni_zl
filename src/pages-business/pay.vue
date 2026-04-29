@@ -20,34 +20,20 @@
 					class="quick-item" 
 					v-for="(item, index) in quickList" 
 					:key="index"
-					:class="{active: selectQuick === index}"
+					:class="{active: selectQuick === index && !isCustom}"
 					@click="selectQuickItem(index, item)"
 				>
 					<view class="quick-num">{{item}}</view>
 					<view class="quick-unit">积分</view>
 				</view>
-				<view 
-					class="quick-item custom-item"
-					:class="{active: selectQuick === -1}"
-					@click="selectCustom"
-				>
-					<view class="custom-text">自定义</view>
-				</view>
-			</view>
-
-			<!-- 自定义金额输入（选中自定义时显示） -->
-			<view class="custom-input-wrap" v-if="showCustomInput">
-				<view class="input-label">充值数量</view>
-				<view class="input-box">
-					<u-icon name="edit-pen" size="32" color="#999"></u-icon>
-					<input 
-						class="custom-input" 
-						type="number" 
-						v-model="pay.money" 
-						placeholder="请输入充值积分数量" 
-						placeholder-class="input-placeholder"
-						focus="true"
-					/>
+				<view
+				class="quick-item custom-item"
+				:class="customItemClass"
+				@click="selectCustom"
+			>
+				<input class="custom-input-inner custom-input--hide" type="number" v-model="pay.money" placeholder="" placeholder-class="input-placeholder" :focus="customInputFocus" />
+					<text class="custom-unit custom-input--hide">积分</text>
+					<text class="custom-text custom-label--show">自定义</text>
 				</view>
 			</view>
 
@@ -120,8 +106,8 @@
 				message: '积分可用于悬赏提问，平台提供各种充值优惠',
 				ShowType: false,
 				selectQuick: null,
-				showCustomInput: false,
-				quickList: [10, 30, 50, 100, 200, 500],
+				isCustom: false,
+			quickList: [10, 30, 50, 100, 200, 500],
 				TypeList: [
 					{name: '微信支付', value: 'wx'},
 					{name: '支付宝支付', value: 'zfb'}
@@ -134,18 +120,31 @@
 				}
 			}
 		},
+		computed: {
+			isCustomMode() {
+				return this.isCustom
+			},
+			customItemClass() {
+				return this.isCustom ? 'active' : ''
+			},
+			customInputFocus() {
+				return this.isCustom
+			}
+		},
+
 		methods:{
 			selectQuickItem(index, value)
 			{
 				this.selectQuick = index
-				this.showCustomInput = false
+				this.isCustom = false
 				this.pay.money = String(value)
 			},
 			selectCustom()
 			{
-				this.selectQuick = -1
-				this.showCustomInput = true
 				this.pay.money = ''
+				setTimeout(() => {
+					this.isCustom = true
+				}, 50)
 			},
 			TypeSelect(item)
 			{
@@ -326,41 +325,40 @@
 					color: #909399;
 					font-weight: 500;
 				}
-			}
-		}
-	}
 
-	.custom-input-wrap {
-		margin-top: 20rpx;
-		padding: 24rpx;
-		background: #f8f9fc;
-		border-radius: 16rpx;
+				/* 默认状态：隐藏输入框和积分，显示自定义文字 */
+				.custom-input--hide {
+					display: none;
+				}
+				.custom-label--show {
+					display: inline;
+				}
 
-		.input-label {
-			font-size: 24rpx;
-			color: #909399;
-			margin-bottom: 14rpx;
-		}
+				/* 选中后：显示输入框和积分，隐藏自定义文字 */
+				&.active {
+					.custom-input--hide {
+						display: block;
+					}
+					.custom-label--show {
+						display: none;
+					}
 
-		.input-box {
-			display: flex;
-			align-items: center;
-			padding: 0 20rpx;
-			height: 88rpx;
-			background: white;
-			border-radius: 12rpx;
-			border: 2rpx solid #e0e0e0;
+					.custom-input-inner {
+						width: 100%;
+						text-align: center;
+						font-size: 38rpx;
+						font-weight: 600;
+						color: #0173de;
+						background: transparent;
+					}
 
-			.custom-input {
-				flex: 1;
-				height: 100%;
-				font-size: 32rpx;
-				color: #303133;
-				padding-left: 16rpx;
-			}
-
-			.input-placeholder {
-				color: #c0c4cc;
+					.custom-unit {
+						display: block;
+						margin-top: 6rpx;
+						font-size: 22rpx;
+						color: #0173de;
+					}
+				}
 			}
 		}
 	}

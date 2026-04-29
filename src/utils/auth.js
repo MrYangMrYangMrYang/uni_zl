@@ -38,7 +38,7 @@ export function checkLogin(autoRedirect = true) {
 	if (autoRedirect) {
 		setTimeout(() => {
 			uni.$u.route({
-				url: '/pages/business/login',  // 登录页路径
+				url: '/pages-business/login',  // 登录页路径
 				params: { openid: 'h5' }       // 传递openid标识H5环境
 			})
 		}, 1200)  // 延迟1.2秒跳转，让用户先看到提示

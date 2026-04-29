@@ -3,8 +3,8 @@
 		<!-- 用户信息 -->
 		<view class="user">
 			<view class="avatar">
-			<!-- #ifdef H5 || APP-PLUS -->
-				<image v-if="!isLogin" src="/static/zl.png"></image>
+		<!-- #ifdef H5 || APP-PLUS -->
+			<image v-if="!isLogin" src="/static/zl.svg"></image>
 				<image v-else :src="userInfo.avatar_text"></image>
 			<!-- #endif -->
 
@@ -29,17 +29,17 @@
 		<view v-if="isLogin">
 			<!-- 资产展示卡片 -->
 			<view class="asset-card">
-				<view class="asset-item" @click="navTo('/pages/business/pay')">
+				<view class="asset-item" @click="navTo('/pages-business/pay')">
 					<view class="value">{{userInfo.score || 0}}</view>
 					<view class="label">我的积分</view>
 				</view>
 				<view class="asset-divider"></view>
-				<view class="asset-item" @click="navTo('/pages/business/follow')">
+				<view class="asset-item" @click="navTo('/pages-business/follow')">
 					<view class="value">{{userInfo.follow_count || 0}}</view>
 					<view class="label">我的关注</view>
 				</view>
 				<view class="asset-divider"></view>
-				<view class="asset-item" @click="navTo('/pages/business/follow?tab=fans')">
+				<view class="asset-item" @click="navTo('/pages-business/follow?tab=fans')">
 					<view class="value">{{userInfo.fans_count || 0}}</view>
 					<view class="label">我的粉丝</view>
 				</view>
@@ -48,19 +48,19 @@
 			<!-- 常用功能网格 -->
 			<view class="grid-menu">
 				<u-grid :border="false" col="2">
-					<u-grid-item @click="navTo('/pages/business/user')">
+					<u-grid-item @click="navTo('/pages-business/user')">
 						<u-icon name="account" :size="26" color="#ff9900"></u-icon>
 						<text class="grid-text">个人主页</text>
 					</u-grid-item>
-					<u-grid-item @click="navTo('/pages/business/profile')">
+					<u-grid-item @click="navTo('/pages-business/profile')">
 						<u-icon name="edit-pen" :size="26" color="#0173de"></u-icon>
 						<text class="grid-text">基本资料</text>
 					</u-grid-item>
-					<u-grid-item @click="navTo('/pages/business/checkin')">
+					<u-grid-item @click="navTo('/pages-business/checkin')">
 						<u-icon name="calendar" :size="26" color="#19be6b"></u-icon>
 						<text class="grid-text">每日签到</text>
 					</u-grid-item>
-					<u-grid-item @click="show = true">
+					<u-grid-item @click="confirmLogout">
 						<u-icon name="share-square" :size="26" color="#909399"></u-icon>
 						<text class="grid-text">退出登录</text>
 					</u-grid-item>
@@ -109,9 +109,6 @@
 		
 		<!-- 提醒组件 -->
 		<u-toast ref="notice"></u-toast>
-		
-		<!-- 弹框组件 -->
-		<u-modal style="text-align: center;" :show="show" :title="'退出提醒'" :content="'是否确认退出'" showCancelButton :closeOnClickOverlay="true" @cancel="show = false" @close="show = false" @confirm="logout"></u-modal>
 	</view>
 </template>
 
@@ -131,7 +128,6 @@
 		data()
 		{
 			return {
-				show: false
 			}
 		},
 		computed: {
@@ -257,12 +253,17 @@
 					}
 				})
 			},
-			logout()
+			confirmLogout()
 			{
-				// 使用 Vuex 登出
-				this.$store.dispatch('logout')
-				//关闭模态框
-				this.show = false
+				uni.showModal({
+					title: '退出提醒',
+					content: '是否确认退出',
+					success: (res) => {
+						if (res.confirm) {
+							this.$store.dispatch('logout')
+						}
+					}
+				})
 			},
 			toast()
 			{

@@ -104,7 +104,7 @@
 
 	export default {
 		components: {
-			comment: () => import('./comment.vue'),
+			comment: () => import('@/components/comment/comment.vue'),
 			ActionMenu
 		},
 		

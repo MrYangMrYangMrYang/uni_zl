@@ -77,18 +77,28 @@ export default {
 	/**
 	 * 成功提示后自动跳转页面
 	 * @param {string} message - 成功提示文字
-	 * @param {string} url - 目标页面路径
+	 * @param {string} url - 目标页面路径（如 "/pages/post/info"）
 	 * @param {boolean} [isTab=false] - 是否为TabBar页面（决定用switchTab还是navigateTo）
+	 * @param {object} [params={}] - URL查询参数（如 { postid: 123 } 会拼接成 ?postid=123）
 	 */
-	successAndNavigate(message, url, isTab = false) {
+	successAndNavigate(message, url, isTab = false, params = {}) {
 		const duration = TOAST_CONFIG.SUCCESS_DURATION
 		uni.showToast({ title: message, icon: 'success', duration })
 
 		setTimeout(() => {
+			let finalUrl = url
+
+			if (Object.keys(params).length > 0) {
+				const queryString = Object.keys(params)
+					.map(key => `${key}=${params[key]}`)
+					.join('&')
+				finalUrl = `${url}?${queryString}`
+			}
+
 			if (isTab) {
-				uni.switchTab({ url })        // TabBar页面必须用switchTab
+				uni.switchTab({ url: finalUrl })
 			} else {
-				uni.navigateTo({ url })       // 普通页面用navigateTo
+				uni.navigateTo({ url: finalUrl })
 			}
 		}, duration)
 	},

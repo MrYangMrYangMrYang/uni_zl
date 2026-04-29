@@ -76,70 +76,42 @@
 		</view>
 
 		<!-- ==================== 关注列表区域 ==================== -->
-		<!-- 显示条件：当前选中"关注"标签(active='0'或空) 且 不在切换中 且 初始加载完成 -->
 		<view class="list" v-if="(active === '0' || active === '') && !switchingTab && !pageLoading">
-			<!-- 遍历关注列表：使用滑动操作组件包裹每个用户卡片 -->
-			<u-swipe-action v-for="(item, index) in attenlist" :key="index" v-if="attenlist.length > 0">
-				<!-- 滑动操作容器：添加上下边框线 -->
-				<view class="swipe-action u-border-top u-border-bottom">
-					<!-- 用户信息卡片：水平布局（头像 + 信息） -->
-					<view class="item">
-						<!-- 左侧头像区域：固定100rpx宽高 -->
-						<view class="business">
-							<!-- 导航链接：点击跳转到用户个人主页 -->
-							<!-- 动态URL：拼接用户ID参数busid -->
-							<navigator :url="`/pages/business/user?busid=${item.business.id}`" class="avatar">
-								<!-- 头像图片：aspectFit模式保持比例填充 -->
-								<image mode="aspectFit" :src="item.business.avatar_text"></image>
-							</navigator>
-						</view>					
-						
-						<!-- 右侧用户信息区：弹性布局占据剩余空间 -->
-						<view class="info">
-							<!-- 用户昵称：可点击的导航链接 -->
-							<navigator url="" class="nickname">{{item.business.nickname}}</navigator>
-							<!-- 用户简介/标签：单行显示，超出省略号 -->
-							<view class="desc">{{item.business.lable}}</view>
-						</view>
+			<view v-for="(item, index) in attenlist" :key="index" v-if="attenlist.length > 0" class="swipe-action u-border-top u-border-bottom">
+				<view class="item">
+					<view class="business">
+						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
+							<image mode="aspectFit" :src="item.business.avatar_text"></image>
+						</navigator>
+					</view>
+					<view class="info">
+						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">{{item.business.nickname}}</navigator>
+						<view class="desc" v-if="item.business.lable">{{item.business.lable}}</view>
 					</view>
 				</view>
-			</u-swipe-action>
-			
-			<!-- 空状态组件：当关注列表为空时显示 -->
-			<!-- mode: "list" → 列表型空状态图标 -->
-			<!-- text: 自定义提示文案 -->
+			</view>
+
 			<u-empty v-if="attenlist.length === 0" mode="list" text="暂无关注"></u-empty>
-			
-			<!-- 列表底部提示：有数据时显示"没有更多数据了" -->
 			<view class="list-count" v-if="attenlist.length > 0">没有更多数据了</view>
 		</view>
-		
+
 		<!-- ==================== 粉丝列表区域 ==================== -->
-		<!-- 显示条件：当前选中"粉丝"标签(active='1') 且 不在切换中 且 初始加载完成 -->
 		<view class="list" v-if="active === '1' && !switchingTab && !pageLoading">
-			<!-- 遍历粉丝列表：结构与关注列表完全相同 -->
-			<u-swipe-action v-for="(item, index) in fanslist" :key="index" v-if="fanslist.length > 0">
-				<view class="swipe-action u-border-top u-border-bottom">
-					<view class="item">
-						<view class="business">
-							<!-- 跳转链接：同样跳转到该用户的个人主页 -->
-							<navigator :url="`/pages/business/user?busid=${item.business.id}`" class="avatar">
-								<image mode="aspectFit" :src="item.business.avatar_text"></image>
-							</navigator>
-						</view>
-						
-						<view class="info">
-							<navigator url="" class="nickname">{{item.business.nickname}}</navigator>
-							<view class="desc">{{item.business.lable}}</view>
-						</view>
+			<view v-for="(item, index) in fanslist" :key="index" v-if="fanslist.length > 0" class="swipe-action u-border-top u-border-bottom">
+				<view class="item">
+					<view class="business">
+						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
+							<image mode="aspectFit" :src="item.business.avatar_text"></image>
+						</navigator>
+					</view>
+					<view class="info">
+						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">{{item.business.nickname}}</navigator>
+						<view class="desc" v-if="item.business.lable">{{item.business.lable}}</view>
 					</view>
 				</view>
-			</u-swipe-action>
-			
-			<!-- 空状态：粉丝列表为空时的提示 -->
+			</view>
+
 			<u-empty v-if="fanslist.length === 0" mode="list" text="暂无粉丝"></u-empty>
-			
-			<!-- 底部提示 -->
 			<view class="list-count" v-if="fanslist.length > 0">没有更多数据了</view>
 		</view>
 

@@ -111,7 +111,7 @@ module.exports = (vm) => {
 			vm.$store.dispatch('logout')  // 清空用户状态
 			uni.$u.toast('登录已过期，请重新登录')
 			setTimeout(() => {
-				uni.navigateTo({ url: '/pages/business/login' })
+				uni.navigateTo({ url: '/pages-business/login' })
 			}, 1500)
 			return new Promise(() => {})  // 返回永不resolve的Promise，阻止后续执行
 		}

@@ -12,11 +12,10 @@ import Vue from 'vue'
 import App from './App'
 import store from './store'
 
-import uView from "uview-ui";
-
+import uView from "uview-ui"
 import toast from './utils/toast.js'
 
-Vue.use(uView);
+Vue.use(uView)
 
 uni.$toast = toast
 

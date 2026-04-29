@@ -97,6 +97,7 @@
     "postcss-comment": "^2.0.0",
     "sass": "^1.63.6",
     "sass-loader": "^10.4.1",
+    "sharp": "^0.34.5",
     "vue-template-compiler": ">= 2.6.14 < 2.7"
   },
   "browserslist": [

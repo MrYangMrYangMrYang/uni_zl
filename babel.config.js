@@ -51,6 +51,17 @@ process.UNI_LIBRARIES.forEach(libraryName => {
   ])
 })
 
+plugins.push([
+  'import',
+  {
+    'libraryName': 'uview-ui',
+    'libraryDirectory': 'packages',
+    'style': (name) => {
+      return `uview-ui/components/${name}/${name}.css`
+    }
+  }
+])
+
 if (process.env.UNI_PLATFORM !== 'h5') {
   plugins.push('@babel/plugin-transform-runtime')
 }

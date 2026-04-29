@@ -89,24 +89,24 @@
 
 			<!-- 标签栏：用于切换"我的提问"、"我的回答"、"我的收藏"三个视图 -->
 			<view class='nav' v-if="business">
-			  <u-tabs
-			  class="nav-item"                    <!-- 标签栏容器样式类 -->
-			  :list="cate"                         <!-- 标签数据源（定义在data中） -->
-			  @click="CateToggle"                  <!-- 标签点击事件处理函数 -->
-			  lineWidth="75"                       <!-- 激活指示条宽度 -->
-			  :is-scroll="false"                   <!-- 禁止横向滚动（三等分布局） -->
-			  :activeStyle="{                      <!-- 激活标签的样式 -->
-				  color: '#303133',                 /* 文字颜色：深灰色 */
-				  fontWeight: 'bold',               /* 字体加粗 */
-				  transform: 'scale(1.05)'          /* 轻微放大效果 */
-			  }"
-			  :inactiveStyle="{                    <!-- 未激活标签的样式 -->
-				  color: '#606266',                 /* 文字颜色：中灰色 */
-				  transform: 'scale(1)'             /* 正常大小 */
-			  }"
-			  itemStyle="flex: 1; height: 50px;"   <!-- 单个标签项样式：等分高度50px -->
-		  >
-		  </u-tabs>
+				<u-tabs
+					class="nav-item"
+					:list="cate"
+					@click="CateToggle"
+					lineWidth="75"
+					:is-scroll="false"
+					:activeStyle="{
+						color: '#303133',
+						fontWeight: 'bold',
+						transform: 'scale(1.05)'
+					}"
+					:inactiveStyle="{
+						color: '#606266',
+						transform: 'scale(1)'
+					}"
+					itemStyle="flex: 1; height: 50px;"
+				>
+				</u-tabs>
 			</view>
 		</view>
 
@@ -122,7 +122,7 @@
 			<!-- 循环渲染每条提问记录 -->
 			<view class="post-card" v-for="(item, index) in questpost" :key="index">
 				<!-- 整个卡片可点击：跳转到帖子详情页 -->
-				<navigator :url="`/pages/post/info?postid=${item.id}`" class="card-content">
+				<navigator :url="`/pages-post/info?postid=${item.id}`" class="card-content">
 					<!-- 卡片头部：作者信息 + 发布时间 -->
 					<view class="card-header">
 						<view class="author-info">
@@ -159,6 +159,7 @@
 			</view>
 			<!-- 空状态：没有提问数据时显示 -->
 			<u-empty v-if="questpost.length === 0" mode="list" text="暂无提问"></u-empty>
+			<view class="list-count" v-if="questpost.length > 0">没有更多数据了</view>
 		</view>
 
 		<!-- ==================== 列表区域2：我的回答 ==================== -->
@@ -167,7 +168,7 @@
 			<!-- 循环渲染每条回答记录 -->
 			<view class="post-card" v-for="(item, index) in answerpost" :key="index">
 				<!-- 点击跳转到被评论的帖子详情页 -->
-				<navigator :url="`/pages/post/info?postid=${item.postid}`" class="card-content">
+				<navigator :url="`/pages-post/info?postid=${item.postid}`" class="card-content">
 					<!-- 卡片头部：回答者信息 + 时间 -->
 					<view class="card-header">
 						<view class="author-info">
@@ -192,6 +193,7 @@
 			</view>
 			<!-- 空状态：没有回答数据时显示 -->
 			<u-empty v-if="answerpost.length === 0" mode="list" text="暂无回答"></u-empty>
+			<view class="list-count" v-if="answerpost.length > 0">没有更多数据了</view>
 		</view>
 
 		<!-- ==================== 列表区域3：我的收藏 ==================== -->
@@ -200,7 +202,7 @@
 			<!-- 循环渲染每条收藏记录 -->
 			<view class="post-card" v-for="(item, index) in collectpost" :key="index">
 				<!-- 点击跳转到收藏的帖子详情页 -->
-				<navigator :url="`/pages/post/info?postid=${item.post.id}`" class="card-content">
+				<navigator :url="`/pages-post/info?postid=${item.post.id}`" class="card-content">
 					<!-- 卡片头部：收藏者信息 + 帖子发布时间 -->
 					<view class="card-header">
 						<view class="author-info">
@@ -234,6 +236,7 @@
 			</view>
 			<!-- 空状态：没有收藏数据时显示 -->
 			<u-empty v-if="collectpost.length === 0" mode="list" text="暂无收藏"></u-empty>
+			<view class="list-count" v-if="collectpost.length > 0">没有更多数据了</view>
 		</view>
 
 		<!-- 全局Toast提示组件引用 -->
@@ -793,6 +796,14 @@ export default {
 /* ==================== 列表容器 ==================== */
 .list-container {
 	padding: 20rpx 24rpx;             /* 内边距 */
+}
+
+/* 列表底部提示文字 */
+.list-count {
+	text-align: center;               /* 居中对齐 */
+	color: #999;                      /* 灰色文字 */
+	font-size: 26rpx;                 /* 小字号 */
+	padding: 30rpx 0 20rpx;           /* 上下内边距 */
 }
 
 /* ==================== 帖子卡片通用样式 ==================== */

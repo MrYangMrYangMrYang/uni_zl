@@ -57,7 +57,7 @@ export default {
      */
     goDetail() {
       uni.navigateTo({
-        url: `/pages/post/info?postid=${this.item.id}`
+        url: `/pages-post/info?postid=${this.item.id}`
       })
     },
     
@@ -67,7 +67,7 @@ export default {
      */
     goUser() {
       uni.navigateTo({
-        url: `/pages/business/user?busid=${this.item.busid}`
+        url: `/pages-business/user?busid=${this.item.busid}`
       })
     }
   }

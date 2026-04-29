@@ -20,8 +20,8 @@
 					</view>
 					<!-- 收藏按钮：仅对非自己的帖子显示（自己不能收藏自己的帖子） -->
 					<view class="item collect-btn" v-if="business.id != post.busid">
-						<!-- 收藏状态未加载时：显示空白占位符（防止布局抖动） -->
-						<u-tag v-if="!collectLoaded" text="" type="info" plain icon="star" size="mini" style="width: 80rpx;"></u-tag>
+						<!-- 收藏状态未加载时：透明占位符（防止布局抖动） -->
+						<u-tag v-if="!collectLoaded" text=" " type="info" plain icon="star" size="mini" :customStyle="{opacity: 0}"></u-tag>
 						<!-- 已收藏状态：红色实心星标 + "已收藏"文字，点击可取消收藏 -->
 						<u-tag v-else-if="collect" @click="CollectToggle" text="已收藏" type="error" icon="star-fill" size="mini"></u-tag>
 						<!-- 未收藏状态：灰色空心星标 + "收藏"文字，点击可收藏 -->
@@ -35,7 +35,7 @@
 				<!-- 作者信息行：头像 + 昵称/关注按钮 + 发布时间 -->
 				<view class="author-row">
 					<!-- 作者头像链接：点击可跳转到作者个人主页 -->
-					<navigator :url="`/pages/business/user?busid=${post.business.id}`" class="avatar-link">
+					<navigator :url="`/pages-business/user?busid=${post.business.id}`" class="avatar-link">
 						<!-- 头像图片：使用 aspectFill 模式裁剪填充 -->
 						<image class="avatar" mode="aspectFill" :src="post.business.avatar_text"></image>
 					</navigator>
@@ -48,7 +48,7 @@
 							<!-- 关注按钮：仅对非自己的帖子显示 -->
 							<view class="follow-btn" v-if="business.id != post.busid">
 								<!-- 关注状态未加载时：显示占位符 -->
-								<u-tag v-if="!attentionLoaded" text="" type="primary" plain size="mini" style="width: 80rpx;"></u-tag>
+								<u-tag v-if="!attentionLoaded" text=" " type="primary" plain size="mini" :customStyle="{opacity: 0}"></u-tag>
 								<!-- 已关注状态：绿色边框 + "已关注"文字，点击可取关 -->
 								<u-tag v-else-if="attention" @click="AttentionToggle" text="已关注" type="success" plain size="mini"></u-tag>
 								<!-- 未关注状态：蓝色边框 + "关注"文字，点击可关注 -->
@@ -116,7 +116,7 @@
 					<text>我来回答</text>
 				</view>
 				<!-- 编辑按钮：仅作者且帖子未解决时显示 -->
-				<view class="action-btn-wrap warning" v-if="post.busid == business.id && post.status == '0'" @click="edit">
+				<view class="action-btn-wrap" v-if="post.busid == business.id && post.status == '0'" @click="edit">
 					<u-icon name="edit-pen-fill" size="18" color="#fff"></u-icon>
 					<text>修改提问</text>
 				</view>
@@ -162,7 +162,7 @@
 						<!-- 评论头部：头像 + 昵称/标签 + 时间 -->
 						<view class="item-header">
 							<!-- 评论者头像链接：跳转到其主页 -->
-							<navigator :url="`/pages/business/user?busid=${item.busid}`" class="avatar-link">
+							<navigator :url="`/pages-business/user?busid=${item.busid}`" class="avatar-link">
 								<image class="avatar" mode="aspectFill" :src="item.business.avatar_text"></image>
 							</navigator>
 							<!-- 评论者信息区 -->
@@ -225,7 +225,7 @@
 
 				<!-- 加载中状态：正在请求评论数据时显示 -->
 				<view class="loading-state" v-else-if="loading">
-					<u-loading-icon text="加载中..." size="36" textSize="28"></u-loading-icon>
+					<u-loading-icon text="评论加载中..." size="22" textSize="16"></u-loading-icon>
 				</view>
 
 				<!-- 空状态：没有评论数据时显示 -->
@@ -237,39 +237,18 @@
 		</view>
 
 		<!-- ==================== 操作菜单弹窗 ==================== -->
-		<u-popup :show="MenuShow" @close="MenuShow = false" round="10">
-			<view class="menu">
-				<!-- 菜单按钮网格布局 -->
-				<view class="menu-grid">
-					<!-- 评论按钮：所有人都可以评论（除了不能评论自己） -->
-					<view class="menu-item" @click="showComment" v-if="business.id != accept">
-						<view class="menu-icon comment-icon">
-							<u-icon name="edit-pen-fill" size="28" color="#ffffff"></u-icon>
-						</view>
-						<text class="menu-text">评论</text>
-					</view>
-					<!-- 采纳按钮：只有帖子作者可以采纳，且不能采纳自己的评论，且帖子必须未解决 -->
-					<view class="menu-item" @click="select" v-if="post.busid == business.id && accept != post.busid && post.status != '1'">
-						<view class="menu-icon accept-icon">
-							<u-icon name="checkmark" size="28" color="#ffffff"></u-icon>
-						</view>
-						<text class="menu-text">采纳</text>
-					</view>
-					<!-- 删除按钮：帖子作者可删除任何评论，评论者可删除自己的评论 -->
-					<view class="menu-item" @click="delcom" v-if="post.busid == business.id || business.id == accept">
-						<view class="menu-icon delete-icon">
-							<u-icon name="trash-fill" size="28" color="#ffffff"></u-icon>
-						</view>
-						<text class="menu-text">删除</text>
-					</view>
-				</view>
-				<!-- 取消按钮：关闭弹窗 -->
-				<u-button :customStyle="{color: '#0173de', border: '2rpx solid #0173de', backgroundColor: '#fff'}" shape="circle" text="取消" @click="MenuShow = false"></u-button>
-			</view>
-		</u-popup>
+		<action-menu
+			v-model="MenuShow"
+			:showComment="showCommentBtn"
+			:showAccept="showAcceptBtn"
+			:showDelete="showDeleteBtn"
+			@comment="AnswerShow = true"
+			@accept="select"
+			@delete="delcom"
+		></action-menu>
 
 		<!-- ==================== 回答/评论输入弹窗 ==================== -->
-		<u-popup :show="AnswerShow" @close="AnswerShow = false" round="10">
+		<u-popup mode="bottom" :show="AnswerShow" @close="AnswerShow = false" round="10">
 			<view class="answer">
 				<!-- 弹窗头部：标题 + 关闭按钮 -->
 				<view class="answer-header">
@@ -313,15 +292,15 @@
  * 4. 用户点击"展开评论"后加载评论列表 (CommentData)
  */
 
-// 导入二级评论递归组件
 import comment from '@/components/comment/comment.vue'
-// 导入获取用户信息的工具函数
 import { getUserInfo } from '@/utils/auth.js'
+import ActionMenu from '@/components/comment/ActionMenu.vue'
 
 export default {
 	// 注册子组件
 	components: {
-		comment
+		comment,
+		ActionMenu
 	},
 
 	/**
@@ -340,6 +319,17 @@ export default {
 
 		// 调用初始化方法，加载页面所需的所有数据
 		this.initPageData()
+	},
+
+	/**
+	 * 页面显示时触发（从其他页面返回时也会触发）
+	 * 每次显示都重新加载最新数据
+	 */
+	onShow() {
+		if (this.postid) {
+			this.PostData()
+			this.CommentData()
+		}
 	},
 
 	/**
@@ -384,6 +374,20 @@ export default {
 					trigger: ['blur', 'change']  // 触发时机：失焦和输入变化时都验证
 				}
 			}
+		}
+	},
+
+	computed: {
+		showCommentBtn() {
+			return this.business.id != this.accept
+		},
+		showAcceptBtn() {
+			return this.post.busid == this.business.id
+				&& this.accept != this.post.busid
+				&& this.post.status != '1'
+		},
+		showDeleteBtn() {
+			return this.post.busid == this.business.id || this.business.id == this.accept
 		}
 	},
 
@@ -512,24 +516,19 @@ export default {
 		 * @param {object} comment - 被点击的评论对象
 		 */
 		answer(comment) {
-			// 前置检查：未登录不允许操作
 			if (!this.business.id) {
 				uni.$toast.error('请先登录')
 				return false
 			}
 
-			// 打开操作菜单弹窗
-			this.MenuShow = true
-			// 设置弹窗类型为"评论"模式
-			this.answerType = 'comment'
-			// 清空输入框内容（防止上一次的内容残留）
-			this.comment.content = ''
+			this.pid = comment.id
+			this.comid = comment.id
+			this.status = comment.status
+			this.accept = comment.busid
 
-			// 记录当前操作的评论信息（供后续提交/删除/采纳使用）
-			this.pid = comment.id        // 父级评论ID（用于提交二级评论）
-			this.comid = comment.id      // 评论ID（用于删除操作）
-			this.status = comment.status  // 评论状态（用于采纳判断）
-			this.accept = comment.busid   // 评论作者ID（用于权限判断）
+			this.MenuShow = true
+			this.answerType = 'comment'
+			this.comment.content = ''
 		},
 
 		/**
@@ -852,7 +851,7 @@ export default {
 			// 使用 uView 的路由方法进行页面跳转
 			uni.$u.route({
 				type: 'navigateTo',           // 跳转类型：保留当前页（可返回）
-				url: '/pages/post/edit',      // 目标页面路径
+				url: '/pages-post/edit',      // 目标页面路径
 				params: {
 					postid: this.postid        // 传递帖子ID参数给编辑页
 				}
@@ -1147,10 +1146,11 @@ $white: #ffffff;            /* 白色（卡片背景） */
 
 /* ==================== 操作按钮区域 ==================== */
 .action-section {
-	display: flex;                  /* 弹性布局 */
-	flex-direction: row;            /* 横向排列 */
-	gap: 16rpx;                     /* 多个按钮之间的间距 */
-	margin-top: 20rpx;             /* 与上方内容的间距 */
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	gap: 16rpx;
+	margin-top: 20rpx;
 }
 
 /* 操作按钮通用样式 */
@@ -1361,66 +1361,20 @@ $white: #ffffff;            /* 白色（卡片背景） */
 
 /* ==================== 加载状态样式 ==================== */
 .loading-state {
-	display: flex;                 /* 弹性布局 */
-	justify-content: center;       /* 水平居中 */
-	padding: 60rpx 0;             /* 上下内边距 */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 40rpx 0;
+	gap: 12rpx;
+}
+
+.loading-state :deep(.u-loading-icon__text) {
+	color: #999 !important;
 }
 
 /* ==================== 空状态样式 ==================== */
 .empty-list {
 	padding: 60rpx 0;             /* 上下内边距 */
-}
-
-/* ==================== 操作菜单弹窗样式 ==================== */
-.menu {
-	padding: 30rpx;                /* 内边距 */
-}
-
-/* 菜单按钮网格 */
-.menu-grid {
-	display: grid;                 /* 网格布局 */
-	grid-template-columns: repeat(3, 1fr);  /* 三列等宽 */
-	gap: 24rpx;                    /* 按钮之间的间距 */
-	margin-bottom: 30rpx;          /* 与取消按钮的间距 */
-}
-
-/* 单个菜单项 */
-.menu-item {
-	display: flex;                 /* 弹性布局 */
-	flex-direction: column;       /* 纵向排列 */
-	align-items: center;           /* 水平居中 */
-	gap: 12rpx;                    /* 图标和文字之间的间距 */
-}
-
-/* 菜单图标容器（圆形背景） */
-.menu-icon {
-	width: 88rpx;                   /* 尺寸 */
-	height: 88rpx;
-	border-radius: 50%;           /* 圆形 */
-	display: flex;                 /* 居中显示图标 */
-	align-items: center;
-	justify-content: center;
-}
-
-/* 评论图标：蓝色背景 */
-.comment-icon {
-	background: linear-gradient(135deg, #0173de, #1890ff);
-}
-
-/* 采纳图标：绿色背景 */
-.accept-icon {
-	background: linear-gradient(135deg, #19be6b, #4cd964);
-}
-
-/* 删除图标：红色背景 */
-.delete-icon {
-	background: linear-gradient(135deg, #ed4014, #ff4d4f);
-}
-
-/* 菜单文字 */
-.menu-text {
-	font-size: 26rpx;              /* 字号 */
-	color: $text-color;           /* 深灰色 */
 }
 
 /* ==================== 回答/评论输入弹窗样式 ==================== */

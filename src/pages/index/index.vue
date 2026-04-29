@@ -104,6 +104,14 @@
 			this.fetchCategories()
 			this.getListData()
 		},
+
+		onShow() {
+			if (getApp().globalData.needRefreshHome) {
+				this.page = 1
+				this.getListData()
+				getApp().globalData.needRefreshHome = false
+			}
+		},
 		
 		methods: {
 			
