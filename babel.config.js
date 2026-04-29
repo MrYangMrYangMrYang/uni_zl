@@ -59,7 +59,8 @@ plugins.push([
     'style': (name) => {
       return `uview-ui/components/${name}/${name}.css`
     }
-  }
+  },
+  'uview-ui-import'
 ])
 
 if (process.env.UNI_PLATFORM !== 'h5') {

@@ -12,10 +12,19 @@ import Vue from 'vue'
 import App from './App'
 import store from './store'
 
-import uView from "uview-ui"
-import toast from './utils/toast.js'
+let uView = null
 
-Vue.use(uView)
+try {
+  uView = require('uview-ui')
+} catch (e) {
+  console.warn('[main.js] uView 加载失败:', e.message)
+}
+
+if (uView && uView.install) {
+  Vue.use(uView)
+}
+
+import toast from './utils/toast.js'
 
 uni.$toast = toast
 
