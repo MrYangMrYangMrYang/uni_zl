@@ -189,13 +189,12 @@
 					console.error('fetchFollowData error:', error)
 				}
 			},
-			 signin()
-				{
-					uni.$u.route({
-						url: 'pages/business/login',
-						params: {openid: 'h5'}
-					})
-				},
+			signin() {
+				uni.$u.route({
+					url: '/pages-business/login',
+					params: {openid: 'h5'}
+				})
+			},
 			 async login(){
 				//微信小程序登录
 				uni.login({
