@@ -120,7 +120,7 @@
  * - 表单验证与提交（区分有/无图片上传两种提交方式）
  * - 修改成功后自动同步 Vuex 状态
  */
-import pickRegions from '@/components/pick-regions/pick-regions.vue'
+import pickRegions from './components/pick-regions/pick-regions.vue'
 import { getUserInfo } from '@/utils/auth.js'
 
 export default {

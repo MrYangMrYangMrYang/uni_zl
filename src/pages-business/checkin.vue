@@ -27,7 +27,7 @@
  *
  * 使用组件：j-calendar（日历组件）
  */
-	import JCalendar from '@/components/calendar/j-calendar.vue';
+	import JCalendar from './components/calendar/j-calendar.vue';
 	import { checkLogin, getUserInfo } from '@/utils/auth.js'
 
 	export default {

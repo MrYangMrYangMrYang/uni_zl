@@ -14,6 +14,12 @@
 </template>
 
 <script>
+/**
+ * @component pick-regions
+ * @description 省市区三级联动选择器（business 分包私有）
+ * 功能：省市区三级联动选择、默认值回显、懒加载地区数据
+ * @example <pick-regions :defaultRegion="codeArr" @getRegion="handleRegion"></pick-regions>
+ */
 let CHINA_REGIONS = null
 let loadPromise = null
 

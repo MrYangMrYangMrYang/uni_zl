@@ -171,39 +171,44 @@
 					return
 				}
 
-				var data = {
-					busid: this.business.id,
-					money: this.pay.money,
-					paytype: this.pay.type
-				}
-										
-				var result = await uni.$u.http.post('/pay/pay',data)
-				
-				if(result.code == 0){
-					uni.$toast.error(result.msg)
-					return false
-				}
-				
-				uni.$toast.success(result.msg)
-
-				if(typeof result.data === 'string'){
-					if(result.data.indexOf('Not Found') !== -1 || result.data.indexOf('404') !== -1){
-						uni.$toast.error('支付服务维护中，请稍后重试')
-					}else if(result.data.indexOf('http') === 0){
-						window.location.href = result.data
-					}else if(result.data.indexOf('<form') !== -1 || result.data.indexOf('<!DOCTYPE') !== -1){
-						document.write(result.data)
-						document.close()
-					}else{
-						uni.$toast.error('支付参数异常')
+				try {
+					var data = {
+						busid: this.business.id,
+						money: this.pay.money,
+						paytype: this.pay.type
 					}
-				}else if(typeof result.data === 'object' && result.data !== null){
-					uni.$toast.info('请使用对应平台完成支付')
+											
+					var result = await uni.$u.http.post('/pay/pay',data)
+					
+					if(result.code == 0){
+						uni.$toast.error(result.msg)
+						return false
+					}
+					
+					uni.$toast.success(result.msg)
+
+					if(typeof result.data === 'string'){
+						if(result.data.indexOf('Not Found') !== -1 || result.data.indexOf('404') !== -1){
+							uni.$toast.error('支付服务维护中，请稍后重试')
+						}else if(result.data.indexOf('http') === 0){
+							window.location.href = result.data
+						}else if(result.data.indexOf('<form') !== -1 || result.data.indexOf('<!DOCTYPE') !== -1){
+							document.write(result.data)
+							document.close()
+						}else{
+							uni.$toast.error('支付参数异常')
+						}
+					}else if(typeof result.data === 'object' && result.data !== null){
+						uni.$toast.info('请使用对应平台完成支付')
+					}
+					
+					// #ifdef MP-WEIXIN || APP-PLUS
+					uni.$toast.info('请在对应平台完成支付')
+					// #endif
+				} catch (error) {
+					console.error('pay submit error:', error)
+					uni.$toast.error('支付请求失败，请稍后重试')
 				}
-				
-				// #ifdef MP-WEIXIN || APP-PLUS
-				uni.$toast.info('请在对应平台完成支付')
-				// #endif
 			}
 		}
 	}

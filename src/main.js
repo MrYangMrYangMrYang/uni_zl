@@ -11,6 +11,11 @@
 import Vue from 'vue'
 import App from './App'
 import store from './store'
+import { setupVueErrorHandler, setupUnhandledRejectionHandler, setupGlobalOnError } from './utils/error-handler.js'
+
+setupVueErrorHandler(Vue)
+setupUnhandledRejectionHandler()
+setupGlobalOnError()
 
 let uView = null
 

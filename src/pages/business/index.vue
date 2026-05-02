@@ -148,14 +148,18 @@
 			// 刷新用户信息
 			async refreshUserInfo() {
 				if (!this.isLogin) return
-				const res = await uni.$u.http.post('/user/info', { busid: this.userInfo.id })
-				if (res.code === 1 && res.data.business) {
-					const updated = {
-						...res.data.business,
-						follow_count: this.userInfo.follow_count || 0,
-						fans_count: this.userInfo.fans_count || 0
+				try {
+					const res = await uni.$u.http.post('/user/info', { busid: this.userInfo.id })
+					if (res.code === 1 && res.data.business) {
+						const updated = {
+							...res.data.business,
+							follow_count: this.userInfo.follow_count || 0,
+							fans_count: this.userInfo.fans_count || 0
+						}
+						this.$store.dispatch('loginSuccess', updated)
 					}
-					this.$store.dispatch('loginSuccess', updated)
+				} catch (error) {
+					console.error('refreshUserInfo error:', error)
 				}
 			},
 			// 获取关注和粉丝数量
