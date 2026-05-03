@@ -94,16 +94,18 @@
  * - 手动表单验证
  * - 修改成功后自动跳转到帖子详情页
  */
-import { checkLogin, getUserInfo } from '@/utils/auth.js'
+import { authMixin } from '@/mixins/authMixin'
 
 export default {
+	mixins: [authMixin],
+
 	onLoad(option) {
-		if (!checkLogin(false)) {
+		if (!this.requireLogin(false)) {
 			uni.$u.route({ type: 'navigateBack', delta: 1 })
 			return
 		}
 
-		this.business = getUserInfo()
+		this.business = this.currentUser
 		var postid = option.postid ? option.postid : 0
 		this.postid = postid
 
@@ -208,7 +210,7 @@ export default {
 				return
 			}
 
-			if (!checkLogin()) return
+			if (!this.requireLogin(false)) return
 
 			this.submitting = true
 

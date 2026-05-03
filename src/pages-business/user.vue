@@ -34,20 +34,18 @@
 
 					<!-- 关注按钮区域：仅对非自己的主页显示（需要登录且不是本人） -->
 					<view class="btnlist" v-if="business.id != ybusiness.id && ybusiness.hasOwnProperty('id')">
-						<!-- 已关注状态：绿色按钮 + "取消关注"文字 -->
 						<u-button
 							v-if="attention"
-							@click="AttentionToggle"
+							@click="toggleFollow(busid)"
 							type="success"
 							icon="man-add"
 							text="取消关注"
 							size="small"
 							:customStyle="{height: '60rpx', borderRadius: '30rpx', fontSize: '24rpx'}">
 						</u-button>
-						<!-- 未关注状态：橙色按钮 + "关注"文字 -->
 						<u-button
 							v-else
-							@click="AttentionToggle"
+							@click="toggleFollow(busid)"
 							type="warning"
 							icon="man-add"
 							text="关注"
@@ -92,7 +90,7 @@
 				<u-tabs
 					class="nav-item"
 					:list="cate"
-					@click="CateToggle"
+					@click="handleTabSwitch"
 					lineWidth="75"
 					:is-scroll="false"
 					:activeStyle="{
@@ -262,37 +260,31 @@
  * 4. 用户切换Tab时动态加载对应的数据（带缓存优化）
  */
 
-// 导入认证相关的工具函数
 import { getUserInfo, checkLogin } from '@/utils/auth.js'
+import { followMixin } from '@/mixins/followMixin'
+import { tabCacheMixin } from '@/mixins/tabCacheMixin'
 
 export default {
+	mixins: [followMixin, tabCacheMixin],
 	/**
 	 * 页面生命周期 - onLoad
 	 * 当页面加载时触发，根据是否有busid参数决定加载模式
 	 * @param {object} option - 路由参数对象
 	 */
 	onLoad(option) {
-		// 从路由参数中获取要查看的用户ID
 		var busid = option.busid ? option.busid : 0
 
+		this.initTabCache(['0', '1', '2'])
+
 		if (busid) {
-			// ========== 模式1：查看他人主页 ==========
-			// 获取当前登录用户的信息（用于判断是否已关注）
 			this.ybusiness = getUserInfo()
-			// 保存目标用户的ID
 			this.busid = busid
-			// 加载目标用户的基本信息和提问列表
 			this.UserData()
-			// 检查当前用户是否已关注该目标用户
-			this.AttentionState()
+			this.checkFollowState(busid)
 		}
 		else {
-			// ========== 模式2：查看自己的主页 ==========
-			// 前置检查：必须先登录才能查看自己的主页
-			if (!checkLogin()) return  // 未登录则终止后续操作
-			// 直接使用本地存储的用户信息作为business数据
+			if (!checkLogin()) return
 			this.business = getUserInfo()
-			// 加载自己的提问列表
 			this.QuestData()
 		}
 	},
@@ -314,16 +306,7 @@ export default {
 			],
 			questpost: [],          // 提问列表数据数组
 			answerpost: [],         // 回答列表数据数组
-			collectpost: [],        // 收藏列表数据数组
-			active: '',             // 当前激活的标签ID（''表示默认选中第一个）
-			attention: false,        // 是否已关注该用户
-			switchingTab: false,     // 是否正在切换标签（控制loading遮罩显示）
-			// 标签数据缓存：避免重复请求已加载过的标签数据
-			tabCache: {
-				'0': null,           // 提问列表缓存（null=未加载）
-				'1': null,           // 回答列表缓存
-				'2': null            // 收藏列表缓存
-			}
+			collectpost: []
 		}
 	},
 
@@ -428,108 +411,18 @@ export default {
 			}
 		},
 
-		/**
-		 * 检查关注状态
-		 * 查看他人主页时，检查当前登录用户是否已关注该用户
-		 * 优先读取Vuex缓存，缓存未命中再请求接口
-		 */
-		async AttentionState() {
-			// 如果当前用户未登录：直接设置为未关注
-			if (!this.ybusiness.id) {
-				this.attention = false
-				return false
-			}
-
-			// 尝试从Vuex store的缓存中读取关注状态
-			const cache = this.$store.state.followCache[this.busid]
-			if (cache !== undefined) {
-				// 缓存命中：直接使用缓存值
-				this.attention = cache
-				return true
-			}
-
-			try {
-				// 构造请求参数
-				var data = {
-					followid: this.busid,        // 被关注的用户ID（目标用户）
-					busid: this.ybusiness.id    // 发起查询的用户ID（当前登录用户）
-				}
-
-				// 发送请求检查关注状态
-				var result = await uni.$u.http.post('/attention/check', data, { custom: { toast: false } })
-
-				// code==0 表示未关注，其他情况视为已关注
-				this.attention = result.code == 0 ? false : true
-				// 将结果写入Vuex缓存
-				this.$store.commit('SET_FOLLOW_CACHE', { userId: this.busid, isFollow: this.attention })
-			} catch (error) {
-				console.error('AttentionState error:', error)
-				this.attention = false
-			}
+		onTabCacheHit(tabId) {
+			this.questpost = this.tabCache['0'] || []
+			this.answerpost = this.tabCache['1'] || []
+			this.collectpost = this.tabCache['2'] || []
 		},
 
-		/**
-		 * 切换关注状态（关注/取消关注）
-		 * 在他人主页上操作关注按钮时触发
-		 */
-		async AttentionToggle() {
-			// 前置检查：未登录不允许操作
-			if (!this.ybusiness.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
-
-			try {
-				// 构造请求参数
-				var data = {
-					followid: this.busid,        // 被关注的用户ID
-					busid: this.ybusiness.id    // 发起关注的用户ID
-				}
-
-				var result
-				// 根据当前关注状态决定调用哪个接口
-				if (this.attention) {
-					// 已关注 → 调用取消关注接口
-					result = await uni.$u.http.post('/attention/del', data)
-				} else {
-					// 未关注 → 调用关注接口
-					result = await uni.$u.http.post('/attention/add', data)
-				}
-
-				// 判断操作是否成功
-				if (result.code == 0) {
-					uni.$toast.error(result.msg)
-					return false
-				}
-
-				// 操作成功：显示提示
-				uni.$toast.success(result.msg)
-				// 切换关注状态
-				this.attention = !this.attention
-
-				// 更新Vuex缓存
-				this.$store.commit('SET_FOLLOW_CACHE', { userId: this.busid, isFollow: this.attention })
-
-				// 同步更新Vuex中的关注人数统计
-				if (this.attention) {
-					// 关注成功：关注数+1
-					const newCount = (this.$store.state.userInfo.follow_count || 0) + 1
-					this.$store.commit('UPDATE_FOLLOW_COUNT', newCount)
-				} else {
-					// 取消关注：关注数-1（最小值为0）
-					const newCount = Math.max(0, (this.$store.state.userInfo.follow_count || 0) - 1)
-					this.$store.commit('UPDATE_FOLLOW_COUNT', newCount)
-				}
-			} catch (error) {
-				console.error('AttentionToggle error:', error)
-				uni.$toast.error('操作失败，请稍后重试')
-			}
+		async loadTabData(tabId) {
+			if (tabId == '0') this.QuestData()
+			if (tabId == '1') this.AnswerData()
+			if (tabId == '2') this.CollectData()
 		},
 
-		/**
-		 * 加载收藏列表数据
-		 * 获取用户收藏过的所有帖子记录
-		 */
 		async CollectData() {
 			try {
 				// 构造请求参数
@@ -557,42 +450,6 @@ export default {
 			}
 		},
 
-		/**
-		 * 处理标签栏点击事件（带缓存优化）
-		 * 实现Tab切换逻辑：先检查缓存，有缓存则直接使用，无缓存则请求数据
-		 * @param {object} item - 被点击的标签对象 {name, id}
-		 */
-		CateToggle(item) {
-			// 获取新选中的标签ID
-			const newActive = item.id
-			// 如果点击的是当前已选中的标签，不做任何处理
-			if (this.active === newActive) return
-
-			// 更新当前激活的标签ID
-			this.active = newActive
-
-			// 检查该标签是否有缓存数据
-			if (this.tabCache[newActive] !== null) {
-				// 有缓存：直接从缓存恢复所有列表数据（无需重新请求）
-				this.questpost = this.tabCache['0'] || []    // 恢复提问列表
-				this.answerpost = this.tabCache['1'] || []   // 恢复回答列表
-				this.collectpost = this.tabCache['2'] || []  // 恢复收藏列表
-			} else {
-				// 无缓存：显示切换遮罩并请求对应的数据
-				this.switchingTab = true  // 开启loading遮罩
-
-				// 根据选中的标签ID调用不同的数据加载方法
-				if (newActive == '0') {
-					this.QuestData()     // 加载提问列表
-				}
-				if (newActive == '1') {
-					this.AnswerData()    // 加载回答列表
-				}
-				if (newActive == '2') {
-					this.CollectData()   // 加载收藏列表
-				}
-			}
-		}
 	}
 }
 </script>

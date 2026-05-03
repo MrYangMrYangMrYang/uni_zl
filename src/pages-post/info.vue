@@ -23,9 +23,9 @@
 						<!-- 收藏状态未加载时：透明占位符（防止布局抖动） -->
 						<u-tag v-if="!collectLoaded" text=" " type="info" plain icon="star" size="mini" :customStyle="{opacity: 0}"></u-tag>
 						<!-- 已收藏状态：红色实心星标 + "已收藏"文字，点击可取消收藏 -->
-						<u-tag v-else-if="collect" @click="CollectToggle" text="已收藏" type="error" icon="star-fill" size="mini"></u-tag>
+						<u-tag v-else-if="collect" @click="toggleCollect(postid, post.business.id, post.cateid)" text="已收藏" type="error" icon="star-fill" size="mini"></u-tag>
 						<!-- 未收藏状态：灰色空心星标 + "收藏"文字，点击可收藏 -->
-						<u-tag v-else @click="CollectToggle" text="收藏" type="info" plain icon="star" size="mini"></u-tag>
+						<u-tag v-else @click="toggleCollect(postid, post.business.id, post.cateid)" text="收藏" type="info" plain icon="star" size="mini"></u-tag>
 					</view>
 				</view>
 
@@ -50,9 +50,9 @@
 								<!-- 关注状态未加载时：显示占位符 -->
 								<u-tag v-if="!attentionLoaded" text=" " type="primary" plain size="mini" :customStyle="{opacity: 0}"></u-tag>
 								<!-- 已关注状态：绿色边框 + "已关注"文字，点击可取关 -->
-								<u-tag v-else-if="attention" @click="AttentionToggle" text="已关注" type="success" plain size="mini"></u-tag>
+								<u-tag v-else-if="attention" @click="toggleFollow(post.business.id)" text="已关注" type="success" plain size="mini"></u-tag>
 								<!-- 未关注状态：蓝色边框 + "关注"文字，点击可关注 -->
-								<u-tag v-else @click="AttentionToggle" text="关注" type="primary" plain size="mini"></u-tag>
+								<u-tag v-else @click="toggleFollow(post.business.id)" text="关注" type="primary" plain size="mini"></u-tag>
 							</view>
 						</view>
 						<!-- 发布时间：灰色小字 -->
@@ -293,11 +293,15 @@
  */
 
 import comment from '@/components/comment/comment.vue'
-import { getUserInfo } from '@/utils/auth.js'
 import ActionMenu from '@/components/comment/ActionMenu.vue'
+import { getUserInfo } from '@/utils/auth.js'
+import { followMixin } from '@/mixins/followMixin'
+import { collectMixin } from '@/mixins/collectMixin'
+import { authMixin } from '@/mixins/authMixin'
 
 export default {
-	// 注册子组件
+	mixins: [followMixin, collectMixin, authMixin],
+
 	components: {
 		comment,
 		ActionMenu
@@ -350,10 +354,6 @@ export default {
 				category: {},         // 分类信息（name属性用于显示标签）
 				business: {}          // 作者信息（avatar_text, nickname等）
 			},
-			collect: false,           // 当前用户是否已收藏该帖子
-			collectLoaded: false,     // 收藏状态是否已加载完成（用于控制UI占位符显示）
-			attention: false,         // 当前用户是否已关注该帖子的作者
-			attentionLoaded: false,   // 关注状态是否已加载完成
 			MenuShow: false,          // 是否显示操作菜单弹窗（评论/采纳/删除）
 			AnswerShow: false,        // 是否显示回答/评论输入弹窗
 			// 弹窗类型标识：决定表单的标题和提交逻辑
@@ -398,12 +398,9 @@ export default {
 		 * 使用 async/await 确保 PostData 完成后再执行后续操作
 		 */
 		async initPageData() {
-			// 第一步：等待帖子基本信息加载完成
 			await this.PostData()
-			// 第二步：检查当前用户的关注状态（不阻塞收藏状态的检查）
-			this.AttentionState()
-			// 第三步：检查当前用户的收藏状态
-			this.CollectState()
+			this.checkFollowState(this.post.business.id)
+			this.checkCollectState(this.postid)
 		},
 
 		/**
@@ -474,11 +471,7 @@ export default {
 		 * @param {object} comment - 要操作的评论对象（从v-for中传入）
 		 */
 		async LikeToggle(comment) {
-			// 前置检查：如果用户未登录，提示并终止操作
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
+			if (!this.requireLogin(false)) return false
 
 			try {
 				// 构造点赞请求参数
@@ -516,10 +509,7 @@ export default {
 		 * @param {object} comment - 被点击的评论对象
 		 */
 		answer(comment) {
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
+			if (!this.requireLogin(false)) return false
 
 			this.pid = comment.id
 			this.comid = comment.id
@@ -536,11 +526,7 @@ export default {
 		 * 用于对整个帖子进行一级回答
 		 */
 		showAnswer() {
-			// 前置检查：未登录不允许操作
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
+			if (!this.requireLogin(false)) return false
 
 			// 设置弹窗类型为"回答"模式
 			this.answerType = 'answer'
@@ -568,11 +554,7 @@ export default {
 		 * 权限：帖子作者可删任何评论，评论者可删自己的评论
 		 */
 		async delcom() {
-			// 前置检查：未登录不允许操作
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
+			if (!this.requireLogin(false)) return false
 
 			try {
 				// 构造删除请求参数
@@ -641,209 +623,6 @@ export default {
 		},
 
 		/**
-		 * 检查收藏状态
-		 * 优先读取缓存，缓存未命中再请求接口
-		 */
-		async CollectState() {
-			// 如果用户未登录：直接设置为未收藏，标记加载完成
-			if (!this.business.id) {
-				this.collect = false
-				this.collectLoaded = true
-				return false
-			}
-
-			// 尝试从 Vuex store 的缓存中读取收藏状态
-			const cache = this.$store.state.collectCache[this.postid]
-			if (cache !== undefined) {
-				// 缓存命中：直接使用缓存值，无需请求接口
-				this.collect = cache
-				this.collectLoaded = true
-				return true
-			}
-
-			try {
-				// 构造请求参数
-				var data = {
-					postid: this.postid,        // 帖子ID
-					busid: this.business.id,    // 当前用户ID
-				}
-
-				// 发送请求检查是否已收藏
-				var result = await uni.$u.http.post('/collect/check', data, {
-					custom: { toast: false }  // 不自动弹提示
-				})
-
-				// code==0 表示未收藏，其他情况视为已收藏
-				this.collect = result.code == 0 ? false : true
-				// 标记收藏状态已加载完成
-				this.collectLoaded = true
-				// 将结果写入 Vuex 缓存（下次进入不再重复请求）
-				this.$store.commit('SET_COLLECT_CACHE', { postId: this.postid, isCollect: this.collect })
-			} catch (error) {
-				console.error('CollectState error:', error)
-				// 出错时默认为未收藏
-				this.collect = false
-				this.collectLoaded = true
-			}
-		},
-
-		/**
-		 * 切换收藏状态（收藏/取消收藏）
-		 */
-		async CollectToggle() {
-			// 前置检查：未登录不允许操作
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
-
-			try {
-				// 构造请求参数
-				var data = {
-					postid: this.postid,                  // 帖子ID
-					busid: this.business.id,              // 当前用户ID
-					followid: this.post.business.id,      // 帖子作者ID（业务需要）
-					cateid: this.post.cateid              // 帖子分类ID（业务需要）
-				}
-
-				var result
-				// 根据当前收藏状态决定调用哪个接口
-				if (this.collect) {
-					// 已收藏 → 调用取消收藏接口
-					result = await uni.$u.http.post('/collect/del', data)
-				} else {
-					// 未收藏 → 调用收藏接口
-					result = await uni.$u.http.post('/collect/add', data)
-				}
-
-				// 判断操作是否成功
-				if (result.code == 0) {
-					uni.$toast.error(result.msg)
-					return false
-				}
-
-				// 操作成功：显示提示
-				uni.$toast.success(result.msg)
-				// 切换收藏状态（true↔false）
-				this.collect = !this.collect
-
-				// 更新 Vuex 缓存（保持缓存与实际状态一致）
-				this.$store.commit('SET_COLLECT_CACHE', { postId: this.postid, isCollect: this.collect })
-			} catch (error) {
-				console.error('CollectToggle error:', error)
-				uni.$toast.error('操作失败，请稍后重试')
-			}
-		},
-
-		/**
-		 * 检查关注状态
-		 * 检查当前用户是否已关注该帖子的作者
-		 * 优先读取缓存，缓存未命中再请求接口
-		 */
-		async AttentionState() {
-			// 如果用户未登录：直接设置为未关注，标记加载完成
-			if (!this.business.id) {
-				this.attention = false
-				this.attentionLoaded = true
-				return false
-			}
-
-			try {
-				// 获取要关注的用户ID（帖子作者ID）
-				const followId = this.post.business.id
-				// 尝试从 Vuex store 的缓存中读取关注状态
-				const cache = this.$store.state.followCache[followId]
-
-				if (cache !== undefined) {
-					// 缓存命中：直接使用缓存值
-					this.attention = cache
-					this.attentionLoaded = true
-					return true
-				}
-
-				// 构造请求参数
-				var data = {
-					followid: followId,            // 被关注的用户ID（帖子作者）
-					busid: this.business.id        // 发起关注的用户ID（当前用户）
-				}
-
-				// 发送请求检查是否已关注
-				var result = await uni.$u.http.post('/attention/check', data, {
-					custom: { toast: false }
-				})
-
-				// code==0 表示未关注，其他情况视为已关注
-				this.attention = result.code == 0 ? false : true
-				// 标记关注状态已加载完成
-				this.attentionLoaded = true
-				// 将结果写入 Vuex 缓存
-				this.$store.commit('SET_FOLLOW_CACHE', { userId: followId, isFollow: this.attention })
-			} catch (error) {
-				console.error('AttentionState error:', error)
-				// 出错时默认为未关注
-				this.attention = false
-				this.attentionLoaded = true
-			}
-		},
-
-		/**
-		 * 切换关注状态（关注/取消关注）
-		 */
-		async AttentionToggle() {
-			// 前置检查：未登录不允许操作
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
-
-			try {
-				// 构造请求参数
-				var data = {
-					followid: this.post.business.id,  // 被关注的用户ID（帖子作者）
-					busid: this.business.id          // 发起关注的用户ID（当前用户）
-				}
-
-				var result
-				// 根据当前关注状态决定调用哪个接口
-				if (this.attention) {
-					// 已关注 → 调用取消关注接口
-					result = await uni.$u.http.post('/attention/del', data)
-				} else {
-					// 未关注 → 调用关注接口
-					result = await uni.$u.http.post('/attention/add', data)
-				}
-
-				// 判断操作是否成功
-				if (result.code == 0) {
-					uni.$toast.error(result.msg)
-					return false
-				}
-
-				// 操作成功：显示提示
-				uni.$toast.success(result.msg)
-				// 切换关注状态（true↔false）
-				this.attention = !this.attention
-
-				// 更新 Vuex 缓存
-				this.$store.commit('SET_FOLLOW_CACHE', { userId: this.post.business.id, isFollow: this.attention })
-
-				// 同步更新 Vuex 中的关注人数统计
-				if (this.attention) {
-					// 关注成功：关注数+1
-					const newCount = (this.$store.state.userInfo.follow_count || 0) + 1
-					this.$store.commit('UPDATE_FOLLOW_COUNT', newCount)
-				} else {
-					// 取消关注：关注数-1（最小值为0，防止负数）
-					const newCount = Math.max(0, (this.$store.state.userInfo.follow_count || 0) - 1)
-					this.$store.commit('UPDATE_FOLLOW_COUNT', newCount)
-				}
-			} catch (error) {
-				console.error('AttentionToggle error:', error)
-				uni.$toast.error('操作失败，请稍后重试')
-			}
-		},
-
-		/**
 		 * 跳转到帖子编辑页面
 		 * 仅帖子作者且帖子未解决时可调用
 		 */
@@ -863,11 +642,7 @@ export default {
 		 * 将某条评论设为最佳答案（仅帖子作者可操作）
 		 */
 		async select() {
-			// 前置检查：未登录不允许操作
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
+			if (!this.requireLogin(false)) return false
 
 			try {
 				// 构造采纳请求参数
@@ -907,11 +682,7 @@ export default {
 		 * 先验证表单，通过后发送请求
 		 */
 		submit() {
-			// 前置检查：未登录不允许操作
-			if (!this.business.id) {
-				uni.$toast.error('请先登录')
-				return false
-			}
+			if (!this.requireLogin(false)) return false
 
 			// 手动触发表单验证
 			this.$refs.answer.validate()

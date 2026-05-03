@@ -40,7 +40,7 @@
 				<u-tabs 
 					class="nav-item" 
 					:list="cate"
-					@click="CateToggle"
+					@click="handleTabSwitch"
 					lineWidth="75"
 					:is-scroll="false"
 					:current="active === '1' ? 1 : 0"
@@ -132,10 +132,12 @@
  * 5. 点击用户卡片可跳转到该用户的个人主页
  */
 
-// 导入认证工具函数：登录检查、获取用户ID
 import { checkLogin, getUserId } from '@/utils/auth.js'
+import { tabCacheMixin } from '@/mixins/tabCacheMixin'
+import { authMixin } from '@/mixins/authMixin'
 
 export default {
+	mixins: [tabCacheMixin, authMixin],
 	/**
 	 * 页面生命周期：onLoad（页面加载时触发）
 	 * 执行流程：
@@ -145,30 +147,19 @@ export default {
 	 * 4. 根据参数自动切换到对应标签并加载数据
 	 */
 	onLoad() {
-		// 第一步：调用工具函数检查登录状态
-		if(!checkLogin()) {
-			// 未登录：直接返回，不执行后续代码
-			return
-		}
+		if (!this.requireLogin()) return
 
-		// 第二步：从本地存储获取当前登录用户的ID
-		this.busid = getUserId()
-		
-		// 第三步：获取当前页面的路由参数
-		// getCurrentPages()：获取当前页面栈数组
+		this.busid = this.currentUserId
+		this.initTabCache(['0', '1'])
+
 		const pages = getCurrentPages()
-		// 取出栈顶页面（当前页面实例）
 		const currentPage = pages[pages.length - 1]
-		// 获取页面参数对象（URL查询参数）
 		const options = currentPage.options || {}
-		
-		// 第四步：根据tab参数决定默认显示哪个列表
+
 		if(options.tab === 'fans'){
-			// 参数为'fans'：切换到粉丝标签并加载数据
 			this.active = '1'
 			this.FansData()
 		} else {
-			// 默认情况：显示关注标签并加载数据
 			this.active = '0'
 			this.AttentionData()
 		}
@@ -180,21 +171,15 @@ export default {
 	 */
 	data() {
 		return {
-			busid: 0,                    // 当前登录用户的ID（从auth工具获取）
-			cate: [                       // 标签栏配置数据
-				{name: '我的关注', id: '0'},   // 关注标签
-				{name: '我的粉丝', id: '1'}    // 粉丝标签
+			busid: 0,
+			cate: [
+				{name: '我的关注', id: '0'},
+				{name: '我的粉丝', id: '1'}
 			],
-			active: '',                   // 当前选中的标签ID（'0'=关注，'1'=粉丝）
-			attenlist: [],                // 关注列表数据（数组，每项包含business对象）
-			fanslist: [],                 // 粉丝列表数据（数组结构同上）
-			keywords: '',                 // 搜索关键词（双向绑定到搜索框）
-			switchingTab: false,          // 标签切换loading状态（true=显示遮罩）
-			pageLoading: true,            // 初始页面加载状态（true=显示初始loading）
-			tabCache: {                   // 标签数据缓存（避免重复请求）
-				'0': null,                // 关注列表缓存（null=未加载）
-				'1': null                 // 粉丝列表缓存（null=未加载）
-			}
+			attenlist: [],
+			fanslist: [],
+			keywords: '',
+			pageLoading: true
 		}
 	},
 	
@@ -292,57 +277,16 @@ export default {
 			}
 		},
 
-		/**
-		 * 处理标签栏点击事件（带缓存优化机制）
-		 * 
-		 * 核心优化思路：
-		 * - 首次切换到某个标签时：发送网络请求加载数据
-		 * - 再次切回已加载过的标签时：直接从缓存恢复数据（无需重新请求）
-		 * 
-		 * @param {object} item - 被点击的标签对象 {name: 标签名, id: 标签ID}
-		 */
-		CateToggle(item) {
-			// 提取被点击标签的ID
-			const newActive = item.id
-			
-			// 如果点击的是当前已选中的标签，直接返回（不做任何处理）
-			if (this.active === newActive) return
-
-			// 更新当前激活的标签ID（触发视图重新渲染）
-			this.active = newActive
-
-			// 检查目标标签是否有缓存数据（null表示从未加载过）
-			if (this.tabCache[newActive] !== null) {
-				// ✅ 有缓存：直接从缓存恢复两个列表的数据
-				// （虽然只显示一个列表，但需要同时恢复两个以保持数据完整性）
-				this.attenlist = this.tabCache['0'] || []   // 恢复关注列表缓存
-				this.fanslist = this.tabCache['1'] || []    // 恢复粉丝列表缓存
-				
-			} else {
-				// ❌ 无缓存：开启切换loading遮罩，然后请求数据
-				this.switchingTab = true
-
-				// 根据选中的标签ID调用对应的数据加载方法
-				if (newActive == '0') {
-					// 点击"我的关注"：加载关注列表
-					this.AttentionData()
-				}
-				if (newActive == '1') {
-					// 点击"我的粉丝"：加载粉丝列表
-					this.FansData()
-				}
-			}
+		onTabCacheHit(tabId) {
+			this.attenlist = this.tabCache['0'] || []
+			this.fanslist = this.tabCache['1'] || []
 		},
 
-		/**
-		 * 搜索功能处理函数
-		 * 当用户在搜索框输入关键词并触发搜索时调用
-		 * 
-		 * 执行逻辑：
-		 * 1. 清空当前列表数据（避免新旧数据混合）
-		 * 2. 根据当前活跃标签重新请求数据（携带新的关键词）
-		 * 3. 新数据会自动覆盖旧数据，实现搜索过滤效果
-		 */
+		async loadTabData(tabId) {
+			if (tabId == '0') this.AttentionData()
+			if (tabId == '1') this.FansData()
+		},
+
 		search() {
 			// 判断当前处于哪个标签页
 			if(this.active == '0'){

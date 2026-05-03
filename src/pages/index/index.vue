@@ -18,7 +18,7 @@
 			<view class='nav'>
 				<u-tabs 
 					:list="cateList"
-					@click="handleCateClick"
+					@click="handleTabSwitch"
 					scrollable
 					lineWidth="45"
 					:activeStyle="{
@@ -48,7 +48,7 @@
 			></u-skeleton>
 			
 			<!-- 分类切换加载遮罩 -->
-			<view v-else-if="switchingCate" class="switching-overlay">
+			<view v-else-if="switchingTab" class="switching-overlay">
 				<u-loading-icon mode="circle" size="40"></u-loading-icon>
 				<view style="margin-top: 16rpx; color: #999; font-size: 26rpx;">切换中...</view>
 			</view>
@@ -74,12 +74,13 @@
  * 使用混入：listMixin（分页加载逻辑）
  */
 	import { listMixin } from '@/mixins/listMixin'
+	import { tabCacheMixin } from '@/mixins/tabCacheMixin'
 	import PostItem from '@/components/PostItem.vue'
 	import { mapState } from 'vuex'
 
 	export default {
 		
-		mixins: [listMixin],
+		mixins: [listMixin, tabCacheMixin],
 		
 		components: {
 			PostItem
@@ -87,12 +88,9 @@
 		
 		data() {
 			return {
-				cateList: [{ name: '全部', id: 0 }],  // 分类列表（默认含"全部"）
-				cateid: 0,                            // 当前选中的分类ID
-				keywords: '',                         // 搜索关键词
-				isInitialLoading: true,                // 首次加载状态（控制骨架屏）
-				cacheList: {},                        // 分类数据缓存 {cateid: [data]}
-				switchingCate: false                  // 分类切换中状态
+			cateList: [{ name: '全部', id: 0 }],
+			keywords: '',
+			isInitialLoading: true
 			}
 		},
 		
@@ -101,6 +99,8 @@
 		},
 		
 		onLoad() {
+			this.initTabCache([0])
+			this.active = 0
 			this.fetchCategories()
 			this.getListData()
 		},
@@ -141,7 +141,7 @@
 				
 				try {
 					const res = await uni.$u.http.post('/post/index', {
-						cateid: this.cateid,
+						cateid: this.active,
 						keywords: this.keywords,
 						page: this.page
 					})
@@ -150,13 +150,11 @@
 						const newData = res.data || []
 						
 						if (this.page === 1) {
-							// 第一页：直接替换
 							this.list = newData
-							this.cacheList[this.cateid] = newData
+							this.tabCache[this.active] = newData
 						} else {
-							// 加载更多：合并数据
-							this.list = [...(this.cacheList[this.cateid] || []), ...newData]
-							this.cacheList[this.cateid] = this.list
+							this.list = [...(this.tabCache[this.active] || []), ...newData]
+							this.tabCache[this.active] = this.list
 						}
 
 						this.total = res.total || (this.list.length + (newData.length < this.pagesize ? 0 : 1))
@@ -174,37 +172,21 @@
 					uni.$toast.error('加载失败，请稍后重试')
 				} finally {
 					this.isInitialLoading = false
-					this.switchingCate = false
+					this.switchingTab = false
 					this.isLoading = false
 				}
 			},
 			
-			/**
-			 * 处理分类标签点击事件（带缓存优化）
-			 * 有缓存直接使用，无缓存则请求接口
-			 * @param {object} item - 点击的分类对象 {name, id}
-			 */
-			handleCateClick(item) {
-				if (this.cateid === item.id) return
-				
-				this.cateid = item.id
+			onTabCacheHit(tabId) {
+				this.list = this.tabCache[tabId] || []
+				this.page = Math.ceil(this.list.length / this.pagesize) + 1
+				this.loadStatus = this.list.length >= (this.total || 10) ? 'nomore' : 'loadmore'
+			},
 
-				if (this.cacheList[item.id] && this.cacheList[item.id].length > 0) {
-					// 有缓存：直接使用
-					this.list = this.cacheList[item.id]
-					this.page = Math.ceil(this.list.length / this.pagesize) + 1
-					this.loadStatus = this.list.length >= (this.total || 10) ? 'nomore' : 'loadmore'
-				} else {
-					// 无缓存：请求接口
-					this.switchingCate = true
-					this.refreshList()
-				}
+			async loadTabData(tabId) {
+				this.refreshList()
 			},
 			
-			/**
-			 * 执行搜索操作
-			 * 重置页码并重新加载数据
-			 */
 			search() {
 				this.refreshList()
 			}

@@ -28,10 +28,12 @@
  * 使用组件：j-calendar（日历组件）
  */
 	import JCalendar from './components/calendar/j-calendar.vue';
-	import { checkLogin, getUserInfo } from '@/utils/auth.js'
+	import { authMixin } from '@/mixins/authMixin'
 
 	export default {
-		components: {
+		mixins: [authMixin],
+
+        components: {
             JCalendar
         },
 		created()
@@ -61,7 +63,7 @@
 				uni.$toast.loading('签到中...')
 				
 				try {
-					const userInfo = getUserInfo()
+					const userInfo = this.currentUser
 					const result = await uni.$u.http.post('/checkin/sign', {
 						busid: userInfo.id,
 						date: day
@@ -90,7 +92,7 @@
 			async getData(date)
 			{
 				try {
-					const userInfo = getUserInfo()
+					const userInfo = this.currentUser
 					if(!userInfo.id) {
 						this.list = []
 						return
