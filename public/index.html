@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="description" content="知了论坛 - 基于 Uni-App 的跨平台社区问答应用">
+	<meta name="keywords" content="知了论坛,社区问答,技术交流,编程问答">
+	<meta name="author" content="知了论坛">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="format-detection" content="telephone=no, email=no">
+	<link rel="icon" href="<%= BASE_URL %>static/zl.svg" type="image/svg+xml">
+	<title><%= htmlWebpackPlugin.options.title %></title>
+	<script>
+		var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(a)') || CSS.supports('top: constant(a)'))
+		document.write('<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' + (coverSupport ? ', viewport-fit=cover' : '') + '" />')
+	</script>
+	<link rel="stylesheet" href="<%= BASE_URL %>static/index.<%= VUE_APP_INDEX_CSS_HASH %>.css">
+</head>
+<body>
+	<noscript>
+		<strong>请启用 JavaScript 以继续访问</strong>
+	</noscript>
+	<div id="app"></div>
+</body>
+</html>

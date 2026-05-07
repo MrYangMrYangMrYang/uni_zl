@@ -1,7 +1,7 @@
 <template>
 	<view class="content">
 		<!-- 顶部区域：搜索框 + 分类标签栏 -->
-		<view class='header'>
+		<view class='header' :class="{ 'header-fixed': headerFixed }">
 			<view class='search'>
 			  <u-search 
 			  	:showAction="false"
@@ -13,8 +13,7 @@
 			  	borderColor="transparent"
 			  ></u-search>
 			</view>
-			
-			<!-- 分类标签导航 -->
+
 			<view class='nav'>
 				<u-tabs 
 					:list="cateList"
@@ -34,6 +33,7 @@
 				</u-tabs>
 			</view>
 		</view>
+		<view class="header-placeholder" v-if="headerFixed" :style="{ height: headerHeight + 'px' }"></view>
 
 		<!-- 帖子列表区域 -->
 		<view class="list">
@@ -63,6 +63,7 @@
 		</view>
 
 		<u-toast ref="notice"></u-toast>
+		<u-back-top :scrollTop="scrollTop" :duration="300" icon="arrow-up" :bottom="120" :right="30" :top="400" :customStyle="{background: 'linear-gradient(135deg, #0173de, #4cd964)'}" :iconStyle="{color: '#fff', fontSize: '20px'}"></u-back-top>
 	</view>
 </template>
 
@@ -90,7 +91,11 @@
 			return {
 			cateList: [{ name: '全部', id: 0 }],
 			keywords: '',
-			isInitialLoading: true
+			isInitialLoading: true,
+			scrollTop: 0,
+			headerFixed: false,
+			headerTop: 0,
+			headerHeight: 0
 			}
 		},
 		
@@ -111,6 +116,21 @@
 				this.getListData()
 				getApp().globalData.needRefreshHome = false
 			}
+		},
+
+		onReady() {
+			const query = uni.createSelectorQuery().in(this)
+			query.select('.header').boundingClientRect(data => {
+				if (data) {
+					this.headerTop = data.top
+					this.headerHeight = data.height
+				}
+			}).exec()
+		},
+
+		onPageScroll(e) {
+			this.scrollTop = e.scrollTop
+			this.headerFixed = e.scrollTop >= this.headerTop
 		},
 		
 		methods: {
@@ -144,7 +164,7 @@
 						cateid: this.active,
 						keywords: this.keywords,
 						page: this.page
-					})
+					}, { custom: { toast: false } })
 
 					if (res.code === 1) {
 						const newData = res.data || []
@@ -165,11 +185,21 @@
 							this.loadStatus = 'loadmore'
 						}
 					} else {
-						this.loadStatus = 'loadmore'
+						if (this.page > 1) {
+							this.page--
+							this.loadStatus = 'nomore'
+						} else {
+							this.loadStatus = 'loadmore'
+						}
 					}
 				} catch (error) {
 					console.error('getListData error:', error)
-					uni.$toast.error('加载失败，请稍后重试')
+					if (this.page > 1) {
+						this.page--
+						this.loadStatus = 'nomore'
+					} else {
+						this.loadStatus = 'loadmore'
+					}
 				} finally {
 					this.isInitialLoading = false
 					this.switchingTab = false
@@ -202,12 +232,19 @@
 		min-height: 100vh;
 	}
 
-	/* 顶部固定区域 */
 	.header {
 		background-color: white;
-		position: sticky;
-		top: 0;
+	}
+
+	.header-fixed {
+		position: fixed;
+		top: 44px;
+		left: 0;
+		right: 0;
 		z-index: 10;
+	}
+
+	.header-placeholder {
 	}
 
 	.search {

@@ -47,6 +47,10 @@
 		position: sticky;
 		top: 0;
 		z-index: 10;
+		transform: translateZ(0);
+		will-change: transform;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
 	}
 
 	.search {

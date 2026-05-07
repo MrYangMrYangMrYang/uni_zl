@@ -611,6 +611,10 @@ export default {
 	position: sticky;                 /* 粘性定位（滚动时固定在顶部） */
 	top: 0;                            /* 距离顶部0 */
 	z-index: 10;                       /* 层级（确保在其他内容之上） */
+	transform: translateZ(0);
+	will-change: transform;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
 
 	/* 深度选择器：覆盖uView Tabs组件的内部样式 */
 	::v-deep .u-tabs {

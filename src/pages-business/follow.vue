@@ -369,6 +369,10 @@ export default {
 	position: sticky;                     /* 粘性定位：滚动到顶部时固定不动 */
 	top: 0;                               /* 距离顶部0（紧贴屏幕顶端） */
 	z-index: 10;                          /* 最高层级（确保在所有内容之上） */
+	transform: translateZ(0);
+	will-change: transform;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
 }
 
 /* ==================== 搜索框区域样式 ==================== */

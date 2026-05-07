@@ -107,7 +107,12 @@ export const listMixin = {
 					this.loadStatus = 'loadmore'
 				}
 			} else {
-				this.loadStatus = 'loadmore'  // 失败时重置状态允许重试
+				if (this.page > 1) {
+					this.page--
+					this.loadStatus = 'nomore'
+				} else {
+					this.loadStatus = 'loadmore'
+				}
 				uni.$u.toast(result.msg || '数据加载失败')
 			}
 		}
