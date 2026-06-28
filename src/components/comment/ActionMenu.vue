@@ -1,5 +1,13 @@
 <template>
-	<u-popup mode="bottom" :show="value" @close="$emit('input', false)" round="10" :overlay="true" :close-on-click-overlay="true" :safe-area-inset-bottom="true">
+	<u-popup
+		mode="bottom"
+		:show="value"
+		@close="$emit('input', false)"
+		round="10"
+		:overlay="true"
+		:close-on-click-overlay="true"
+		:safe-area-inset-bottom="true"
+	>
 		<view class="menu">
 			<view class="menu-grid" :class="'grid-' + menuCount">
 				<view v-if="showComment" class="menu-item" @click="onComment">
@@ -25,33 +33,17 @@
 					<text class="menu-text">删除</text>
 				</view>
 			</view>
-			<u-button :customStyle="{color: '#0173de', border: '2rpx solid #0173de', backgroundColor: '#fff'}" shape="circle" text="取消" @click="$emit('input', false)"></u-button>
+			<u-button
+				:customStyle="{ color: '#0173de', border: '2rpx solid #0173de', backgroundColor: '#fff' }"
+				shape="circle"
+				text="取消"
+				@click="$emit('input', false)"
+			></u-button>
 		</view>
 	</u-popup>
 </template>
 
 <script>
-/**
- * ActionMenu.vue - 评论操作菜单组件（通用）
- *
- * 功能说明：
- * - 统一封装一级/二级评论的操作菜单弹窗，避免代码重复
- * - 根据传入的 props 动态显示「评论」「采纳」「删除」按钮
- * - 自动根据可见按钮数量调整布局：1个居中、2~3个等分
- * - 支持采纳按钮的多状态显示（已采纳 / 已解决 / 可采纳）
- *
- * 使用示例：
- *   <action-menu
- *     v-model="menuVisible"
- *     :showComment="canComment"
- *     :showAccept="isAuthor"
- *     :showDelete="canDelete"
- *     :acceptStatus="statusText"
- *     @comment="openInput"
- *     @accept="doAccept"
- *     @delete="doDelete"
- *   />
- */
 export default {
 	name: 'ActionMenu',
 
@@ -75,24 +67,19 @@ export default {
 		acceptStatus: {
 			type: String,
 			default: '',
-			validator(val) { return ['', 'accepted', 'resolved'].includes(val) }
+			validator(val) {
+				return ['', 'accepted', 'resolved'].includes(val)
+			}
 		}
 	},
 
 	computed: {
 		menuCount() {
-			return (this.showComment ? 1 : 0)
-				+ (this.showAccept ? 1 : 0)
-				+ (this.showDelete ? 1 : 0)
+			return (this.showComment ? 1 : 0) + (this.showAccept ? 1 : 0) + (this.showDelete ? 1 : 0)
 		}
 	},
 
 	methods: {
-		/**
-		 * 处理「评论」按钮点击
-		 * 先关闭菜单弹窗，再向上触发 comment 事件
-		 * 与其他按钮的区别：需要同时关闭弹窗并打开输入框
-		 */
 		onComment() {
 			this.$emit('input', false)
 			this.$emit('comment')
@@ -111,10 +98,15 @@ export default {
 	margin-bottom: 20rpx;
 }
 
-/* 按钮数量对应的布局策略 */
-.grid-1 { justify-content: center; }
-.grid-2 { justify-content: space-evenly; }
-.grid-3 { justify-content: space-evenly; }
+.grid-1 {
+	justify-content: center;
+}
+.grid-2 {
+	justify-content: space-evenly;
+}
+.grid-3 {
+	justify-content: space-evenly;
+}
 
 .menu-item {
 	display: flex;

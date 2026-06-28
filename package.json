@@ -1,6 +1,6 @@
 {
   "name": "my-project",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "serve": "npm run dev:h5",
@@ -45,7 +45,11 @@
     "test:h5": "cross-env UNI_PLATFORM=h5 jest -i",
     "test:ios": "cross-env UNI_PLATFORM=app-plus UNI_OS_NAME=ios jest -i",
     "test:mp-baidu": "cross-env UNI_PLATFORM=mp-baidu jest -i",
-    "test:mp-weixin": "cross-env UNI_PLATFORM=mp-weixin jest -i"
+    "test:mp-weixin": "cross-env UNI_PLATFORM=mp-weixin jest -i",
+    "test": "jest --config jest.config.js",
+    "lint": "eslint --ext .js,.vue src",
+    "lint:fix": "eslint --ext .js,.vue src --fix",
+    "format": "prettier --write \"src/**/*.{js,vue,json,scss}\""
   },
   "dependencies": {
     "@dcloudio/uni-app": "^2.0.2-3080720230703001",
@@ -69,7 +73,6 @@
     "@dcloudio/uni-stat": "^2.0.2-3080720230703001",
     "@vue/shared": "^3.0.0",
     "core-js": "^3.8.3",
-    "flyio": "^0.6.2",
     "uview-ui": "^2.0.36",
     "vue": ">= 2.6.14 < 2.7",
     "vuex": "^3.2.0"
@@ -91,10 +94,13 @@
     "@vue/cli-service": "~5.0.0",
     "babel-plugin-import": "^1.11.0",
     "cross-env": "^7.0.2",
+    "eslint": "^8.49.0",
+    "eslint-plugin-vue": "^9.17.0",
     "jest": "^25.4.0",
     "mini-types": "*",
     "miniprogram-api-typings": "*",
     "postcss-comment": "^2.0.0",
+    "prettier": "^2.8.8",
     "sass": "^1.63.6",
     "sass-loader": "^10.4.1",
     "sharp": "^0.34.5",

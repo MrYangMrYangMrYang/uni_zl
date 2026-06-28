@@ -1,41 +1,14 @@
-/**
- * 收藏状态 Mixin
- *
- * 职责：封装收藏状态检查与切换的通用逻辑
- * 消除 info.vue 中 CollectState + CollectToggle 的重复代码
- *
- * @module mixins/collectMixin
- *
- * @example
- * import { collectMixin } from '@/mixins/collectMixin'
- * export default {
- *   mixins: [collectMixin],
- *   methods: {
- *     async init() {
- *       await this.checkCollectState(postid)
- *     },
- *     async onCollectClick() {
- *       await this.toggleCollect(postid, authorId, cateId)
- *     }
- *   }
- * }
- */
-
 import { getUserId } from '@/utils/auth.js'
 
 export const collectMixin = {
 	data() {
 		return {
 			collect: false,
-			collectLoaded: false
+			collectLoaded: false,
+			collectLoading: false
 		}
 	},
 	methods: {
-		/**
-		 * 检查收藏状态（优先读取 Vuex 缓存）
-		 * @param {number} postid - 帖子ID
-		 * @returns {Promise<boolean>} 是否已收藏
-		 */
 		async checkCollectState(postid) {
 			const busid = getUserId()
 			if (!busid) {
@@ -44,6 +17,7 @@ export const collectMixin = {
 				return false
 			}
 
+			// 缓存优先：命中则直接使用，避免重复请求检测接口
 			const cache = this.$store.state.collectCache[postid]
 			if (cache !== undefined) {
 				this.collect = cache
@@ -52,10 +26,14 @@ export const collectMixin = {
 			}
 
 			try {
-				var result = await uni.$u.http.post('/collect/check', {
-					postid: postid,
-					busid: busid
-				}, { custom: { toast: false } })
+				const result = await uni.$u.http.post(
+					'/collect/check',
+					{
+						postid: postid,
+						busid: busid
+					},
+					{ custom: { toast: false } }
+				)
 
 				this.collect = result.code == 0 ? false : true
 				this.collectLoaded = true
@@ -67,23 +45,18 @@ export const collectMixin = {
 			}
 		},
 
-		/**
-		 * 切换收藏状态（收藏/取消收藏）
-		 * @param {number} postid - 帖子ID
-		 * @param {number} followid - 帖子作者ID
-		 * @param {number} cateid - 帖子分类ID
-		 * @returns {Promise<boolean>} 操作是否成功
-		 */
 		async toggleCollect(postid, followid, cateid) {
+			if (this.collectLoading) return
 			const busid = getUserId()
 			if (!busid) {
 				uni.$toast.error('请先登录')
 				return false
 			}
 
+			this.collectLoading = true
 			try {
-				var data = { postid, busid, followid, cateid }
-				var result = this.collect
+				const data = { postid, busid, followid, cateid }
+				const result = this.collect
 					? await uni.$u.http.post('/collect/del', data)
 					: await uni.$u.http.post('/collect/add', data)
 
@@ -98,6 +71,8 @@ export const collectMixin = {
 			} catch (error) {
 				console.error('toggleCollect error:', error)
 				uni.$toast.error('操作失败，请稍后重试')
+			} finally {
+				this.collectLoading = false
 			}
 		}
 	}

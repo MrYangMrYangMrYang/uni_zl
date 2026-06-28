@@ -1,51 +1,47 @@
 <template>
 	<view class="container">
-		<!-- 用户信息 -->
 		<view class="user">
 			<view class="avatar">
-		<!-- #ifdef H5 || APP-PLUS -->
-			<image v-if="!isLogin" src="/static/zl.svg"></image>
+				<!-- #ifdef H5 || APP-PLUS -->
+				<image v-if="!isLogin" src="/static/zl.svg"></image>
 				<image v-else :src="userInfo.avatar_text"></image>
-			<!-- #endif -->
+				<!-- #endif -->
 
-			<!-- #ifdef MP-WEIXIN -->
+				<!-- #ifdef MP-WEIXIN -->
 				<image v-if="isLogin && userInfo.avatar" :src="userInfo.avatar_text"></image>
 				<open-data v-else type="userAvatarUrl"></open-data>
-			<!-- #endif -->
+				<!-- #endif -->
 			</view>
-	  
+
 			<!-- <view class="nickname">{{isLogin ? userInfo.nickname : '未登录'}}</view> -->
-		
+
 			<!-- #ifdef H5 || APP-PLUS -->
-				<button v-if="!isLogin" class="login" @click="signin">登录</button>
+			<button v-if="!isLogin" class="login" @click="signin">登录</button>
 			<!-- #endif -->
 
 			<!-- #ifdef MP-WEIXIN -->
-				<button v-if="!isLogin" class="login" @click="login">授权登录</button>
+			<button v-if="!isLogin" class="login" @click="login">授权登录</button>
 			<!-- #endif -->
 		</view>
-	  
-		<!-- 有登录的菜单 -->
+
 		<view v-if="isLogin">
-			<!-- 资产展示卡片 -->
 			<view class="asset-card">
 				<view class="asset-item" @click="navTo('/pages-business/pay')">
-					<view class="value">{{userInfo.score || 0}}</view>
+					<view class="value">{{ userInfo.score || 0 }}</view>
 					<view class="label">我的积分</view>
 				</view>
 				<view class="asset-divider"></view>
 				<view class="asset-item" @click="navTo('/pages-business/follow')">
-					<view class="value">{{userInfo.follow_count || 0}}</view>
+					<view class="value">{{ userInfo.follow_count || 0 }}</view>
 					<view class="label">我的关注</view>
 				</view>
 				<view class="asset-divider"></view>
 				<view class="asset-item" @click="navTo('/pages-business/follow?tab=fans')">
-					<view class="value">{{userInfo.fans_count || 0}}</view>
+					<view class="value">{{ userInfo.fans_count || 0 }}</view>
 					<view class="label">我的粉丝</view>
 				</view>
 			</view>
 
-			<!-- 常用功能网格 -->
 			<view class="grid-menu">
 				<u-grid :border="false" col="2">
 					<u-grid-item @click="navTo('/pages-business/user')">
@@ -67,10 +63,8 @@
 				</u-grid>
 			</view>
 		</view>
-		
-		<!-- 没有登录的菜单 -->
+
 		<view v-else>
-			<!-- 资产展示卡片 -->
 			<view class="asset-card" @click="toast">
 				<view class="asset-item">
 					<view class="value">--</view>
@@ -88,7 +82,6 @@
 				</view>
 			</view>
 
-			<!-- 常用功能网格 -->
 			<view class="grid-menu">
 				<u-grid :border="false" col="2">
 					<u-grid-item @click="toast">
@@ -106,277 +99,257 @@
 				</u-grid>
 			</view>
 		</view>
-		
-		<!-- 提醒组件 -->
+
 		<u-toast ref="notice"></u-toast>
 	</view>
 </template>
 
 <script>
-/**
- * business/index.vue - 会员中心（个人中心）
- *
- * 功能说明：
- * - 展示用户头像、昵称、登录状态
- * - 资产数据概览（积分、关注数、粉丝数）
- * - 功能菜单导航（我的提问、关注、私信、签到等）
- * - 退出登录确认
- */
-	import { mapState, mapActions } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
-	export default {
-		data()
-		{
-			return {
-			}
+export default {
+	data() {
+		return {}
+	},
+	computed: {
+		...mapState(['userInfo', 'isLogin'])
+	},
+	onShow() {
+		if (this.isLogin) {
+			this.refreshUserInfo()
+			this.fetchFollowData()
+		}
+	},
+	methods: {
+		...mapActions(['logoutSuccess']),
+		navTo(url) {
+			uni.navigateTo({ url })
 		},
-		computed: {
-			...mapState(['userInfo', 'isLogin'])
-		},
-		onShow() {
-			if (this.isLogin) {
-				this.refreshUserInfo()
-				this.fetchFollowData()
-			}
-		},
-		methods:{
-			...mapActions(['logoutSuccess']),
-			// 统一跳转方法
-			navTo(url) {
-				uni.navigateTo({ url })
-			},
-			// 刷新用户信息
-			async refreshUserInfo() {
-				if (!this.isLogin) return
-				try {
-					const res = await uni.$u.http.post('/user/info', { busid: this.userInfo.id })
-					if (res.code === 1 && res.data.business) {
-						const updated = {
-							...res.data.business,
-							follow_count: this.userInfo.follow_count || 0,
-							fans_count: this.userInfo.fans_count || 0
-						}
-						this.$store.dispatch('loginSuccess', updated)
+		async refreshUserInfo() {
+			if (!this.isLogin) return
+			try {
+				const res = await uni.$u.http.post('/user/info', { busid: this.userInfo.id })
+				if (res.code === 1 && res.data.business) {
+					const updated = {
+						...res.data.business,
+						follow_count: this.userInfo.follow_count || 0,
+						fans_count: this.userInfo.fans_count || 0
 					}
-				} catch (error) {
-					console.error('refreshUserInfo error:', error)
+					this.$store.dispatch('loginSuccess', updated)
 				}
-			},
-			// 获取关注和粉丝数量
-			async fetchFollowData() {
-				if (!this.isLogin || !this.userInfo.id) return
-				
-				try {
-					const busid = this.userInfo.id
-					
-					const dedupeList = (list) => {
-						if (!list || list.length === 0) return []
-						const seen = new Map()
-						return list.filter(item => {
-							const key = item.business?.id || item.busid || item.id
-							if (seen.has(key)) return false
-							seen.set(key, true)
-							return true
-						})
-					}
-
-					const followRes = await uni.$u.http.post('/user/myattention', { busid }, { custom: { toast: false } })
-					if (followRes.code === 1) {
-						this.$set(this.userInfo, 'follow_count', dedupeList(followRes.data).length)
-					}
-					
-					const fansRes = await uni.$u.http.post('/user/myfans', { busid }, { custom: { toast: false } })
-					if (fansRes.code === 1) {
-						this.$set(this.userInfo, 'fans_count', dedupeList(fansRes.data).length)
-					}
-				} catch (error) {
-					console.error('fetchFollowData error:', error)
-				}
-			},
-			signin() {
-				uni.$u.route({
-					url: '/pages-business/login',
-					params: {openid: 'h5'}
-				})
-			},
-			 async login(){
-				//微信小程序登录
-				uni.login({
-					provider: 'weixin', //使用微信登录
-					success: async res =>{
-						try {
-							//先获取code凭证
-							var code = res.code ? res.code : ''
-							
-							if(!code){
-								uni.$toast.error('获取登录临时凭证失败')
-								return false
-							}
-								
-							//有code就发送请求
-							var result = await uni.$u.http.post('/business/login',{code})
-							
-							if(result.code == 0){
-								uni.$toast.error(result.msg)
-								return false
-							}
-							
-							var openid = result.data.Openid ? result.data.Openid : ''
-							
-							if(openid){		
-								uni.$toast.success(result.msg, {
-									complete: () => {
-										uni.$u.route({
-											url:result.url,
-											params:{ openid:openid }
-										})
-									}
-								})							
-							}
-							else{
-								// 使用 Vuex 存储
-								this.$store.dispatch('loginSuccess', result.data)
-
-								uni.$toast.success(result.msg, {
-									complete: () => {
-										uni.$u.route({ type: 'navigateBack', delta: 1 })
-									}
-								})
-							}
-						} catch (error) {
-							console.error('login error:', error)
-							uni.$toast.error('登录失败，请稍后重试')
-						}
-					},
-					fail: res =>{
-						//登陆失败
-						console.log('登录失败')
-						console.log(res)
-						uni.$toast.error('微信登录失败')
-					}
-				})
-			},
-			confirmLogout()
-			{
-				uni.showModal({
-					title: '退出提醒',
-					content: '是否确认退出',
-					success: (res) => {
-						if (res.confirm) {
-							this.$store.dispatch('logout')
-						}
-					}
-				})
-			},
-			toast()
-			{
-				uni.$toast.error('请先登录访问')
+			} catch (error) {
+				console.error('refreshUserInfo error:', error)
 			}
+		},
+		async fetchFollowData() {
+			if (!this.isLogin || !this.userInfo.id) return
+
+			try {
+				const busid = this.userInfo.id
+
+				// 后端可能返回重复记录，按用户ID去重后统计真实数量
+				const dedupeList = list => {
+					if (!list || list.length === 0) return []
+					const seen = new Map()
+					return list.filter(item => {
+						const key = item.business?.id || item.busid || item.id
+						if (seen.has(key)) return false
+						seen.set(key, true)
+						return true
+					})
+				}
+
+				const followRes = await uni.$u.http.post('/user/myattention', { busid }, { custom: { toast: false } })
+				if (followRes.code === 1) {
+					this.$set(this.userInfo, 'follow_count', dedupeList(followRes.data).length)
+				}
+
+				const fansRes = await uni.$u.http.post('/user/myfans', { busid }, { custom: { toast: false } })
+				if (fansRes.code === 1) {
+					this.$set(this.userInfo, 'fans_count', dedupeList(fansRes.data).length)
+				}
+			} catch (error) {
+				console.error('fetchFollowData error:', error)
+			}
+		},
+		signin() {
+			uni.$u.route({
+				url: '/pages-business/login',
+				params: { openid: 'h5' }
+			})
+		},
+		async login() {
+			//微信小程序登录
+			uni.login({
+				provider: 'weixin',
+				success: async res => {
+					try {
+						//先获取code凭证
+						const code = res.code ? res.code : ''
+
+						if (!code) {
+							uni.$toast.error('获取登录临时凭证失败')
+							return false
+						}
+
+						//有code就发送请求
+						const result = await uni.$u.http.post('/business/login', { code })
+
+						if (result.code == 0) {
+							uni.$toast.error(result.msg)
+							return false
+						}
+
+						const openid = result.data.Openid ? result.data.Openid : ''
+
+						if (openid) {
+							// 首次登录：返回 openid 但无用户信息，跳转绑定页绑定手机号
+							uni.$toast.success(result.msg, {
+								complete: () => {
+									uni.$u.route({
+										url: result.url,
+										params: { openid: openid }
+									})
+								}
+							})
+						} else {
+							// 已绑定：返回完整用户信息，直接登录成功
+							this.$store.dispatch('loginSuccess', result.data)
+
+							uni.$toast.success(result.msg, {
+								complete: () => {
+									uni.$u.route({ type: 'navigateBack', delta: 1 })
+								}
+							})
+						}
+					} catch (error) {
+						console.error('login error:', error)
+						uni.$toast.error('登录失败，请稍后重试')
+					}
+				},
+				fail: res => {
+					console.log('登录失败')
+					console.log(res)
+					uni.$toast.error('微信登录失败')
+				}
+			})
+		},
+		confirmLogout() {
+			uni.showModal({
+				title: '退出提醒',
+				content: '是否确认退出',
+				success: res => {
+					if (res.confirm) {
+						this.$store.dispatch('logout')
+					}
+				}
+			})
+		},
+		toast() {
+			uni.$toast.error('请先登录访问')
 		}
 	}
+}
 </script>
 
 <style lang="scss">
-	.container {
-		background-color: $zl-bg-color;
-		min-height: 100vh;
-	}
+.container {
+	background-color: $zl-bg-color;
+	min-height: 100vh;
+}
 
-	/* 用户信息 */
-	.user {
-		width: 100%;
-		padding: 60rpx 0;
+.user {
+	width: 100%;
+	padding: 60rpx 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background: $zl-gradient;
+	color: white;
+}
+
+.avatar {
+	width: 160rpx;
+	height: 160rpx;
+	border-radius: $uni-border-radius-circle;
+	overflow: hidden;
+	border: 4rpx solid rgba(255, 255, 255, 0.3);
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.avatar image {
+	width: 100%;
+	height: 100%;
+}
+
+.nickname {
+	font-size: $uni-font-size-lg;
+	font-weight: bold;
+	margin: 20rpx 0;
+}
+
+.login {
+	width: 240rpx !important;
+	color: $zl-primary;
+	background-color: white;
+	margin-top: 20rpx;
+	font-size: $uni-font-size-base;
+	border-radius: 40rpx;
+	border: none;
+}
+
+.asset-card {
+	display: flex;
+	background-color: white;
+	margin: -40rpx 30rpx 0;
+	padding: 30rpx 0;
+	border-radius: 16rpx;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+	position: relative;
+	z-index: 1;
+
+	.asset-item {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		background: $zl-gradient;
-		color: white;
-	}
+		justify-content: center;
 
-	.avatar {
-		width: 160rpx;
-		height: 160rpx;
-		border-radius: $uni-border-radius-circle;
-		overflow: hidden;
-		border: 4rpx solid rgba(255, 255, 255, 0.3);
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-	}
-
-	.avatar image {
-		width: 100%;
-		height: 100%;
-	}
-
-	.nickname {
-		font-size: $uni-font-size-lg;
-		font-weight: bold;
-		margin: 20rpx 0;
-	}
-
-	.login {
-		width: 240rpx !important;
-		color: $zl-primary;
-		background-color: white;
-		margin-top: 20rpx;
-		font-size: $uni-font-size-base;
-		border-radius: 40rpx;
-		border: none;
-	}
-
-	/* 资产卡片 */
-	.asset-card {
-		display: flex;
-		background-color: white;
-		margin: -40rpx 30rpx 0;
-		padding: 30rpx 0;
-		border-radius: 16rpx;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-		position: relative;
-		z-index: 1;
-
-		.asset-item {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-
-			.value {
-				font-size: 36rpx;
-				font-weight: bold;
-				color: $zl-primary;
-				margin-bottom: 8rpx;
-			}
-
-			.label {
-				font-size: 24rpx;
-				color: $uni-text-color-grey;
-			}
+		.value {
+			font-size: 36rpx;
+			font-weight: bold;
+			color: $zl-primary;
+			margin-bottom: 8rpx;
 		}
 
-		.asset-divider {
-			width: 1rpx;
-			height: 60rpx;
-			background-color: #eee;
-			align-self: center;
+		.label {
+			font-size: 24rpx;
+			color: $uni-text-color-grey;
 		}
 	}
 
-	/* 网格功能区 */
-	.grid-menu {
-		background-color: white;
-		margin: 20rpx 30rpx;
-		padding: 30rpx 20rpx;
-		border-radius: 16rpx;
-
-		::v-deep .u-grid-item {
-			padding: 30rpx 0 !important;
-		}
-
-		.grid-text {
-			font-size: 26rpx;
-			color: $uni-text-color;
-			margin-top: 16rpx;
-		}
+	.asset-divider {
+		width: 1rpx;
+		height: 60rpx;
+		background-color: #eee;
+		align-self: center;
 	}
+}
+
+.grid-menu {
+	background-color: white;
+	margin: 20rpx 30rpx;
+	padding: 30rpx 20rpx;
+	border-radius: 16rpx;
+
+	::v-deep .u-grid-item {
+		padding: 30rpx 0 !important;
+	}
+
+	.grid-text {
+		font-size: 26rpx;
+		color: $uni-text-color;
+		margin-top: 16rpx;
+	}
+}
 </style>

@@ -1,44 +1,21 @@
 <template>
-	<!-- 页面主容器：全宽背景色，最小高度占满整个视口 -->
 	<view class="content">
-		<!-- 顶部固定区域：包含搜索框和标签栏 -->
-		<view class='header'>
-			<!-- 搜索框区域：渐变背景 + 圆角搜索框 -->
-			<view class='search'>
-			  <!-- uView搜索组件配置：
-			       - showAction: false → 隐藏右侧搜索按钮
-			       - placeholder: 占位提示文字
-			       - v-model: 双向绑定搜索关键词
-			       - @search: 搜索事件回调
-			       - shape: "round" → 圆角形状
-			       - bgColor: 白色半透明背景（在渐变上更协调）
-			       - borderColor: transparent → 无边框
-			  -->
-			  <u-search 
-			    :showAction="false" 
-			    placeholder="搜索你想知道的用户..." 
-			    v-model="keywords" 
-			    @search="search" 
-			    shape="round" 
-			    bgColor="rgba(255,255,255,0.95)" 
-			    borderColor="transparent"
-			  ></u-search>
+		<view class="header">
+			<view class="search">
+				<u-search
+					:showAction="false"
+					placeholder="搜索你想知道的用户..."
+					v-model="keywords"
+					@search="search"
+					shape="round"
+					bgColor="rgba(255,255,255,0.95)"
+					borderColor="transparent"
+				></u-search>
 			</view>
-			
-			<!-- 标签导航栏：我的关注 / 我的粉丝 -->
-			<view class='nav'>
-				<!-- uView标签组件配置：
-				     - list: 标签数据源（关注/粉丝两个选项）
-				     - @click: 标签点击事件回调
-				     - lineWidth: 75 → 下划线宽度75rpx
-				     - is-scroll: false → 禁止横向滚动（等分显示）
-				     - current: 当前选中索引（active为'1'时显示粉丝，否则显示关注）
-				     - activeStyle: 选中状态的文字样式（加粗、放大1.05倍）
-				     - inactiveStyle: 未选中状态的文字样式（灰色、正常大小）
-				     - itemStyle: 每个标签项的样式（flex:1等分，高度50px）
-				-->
-				<u-tabs 
-					class="nav-item" 
+
+			<view class="nav">
+				<u-tabs
+					class="nav-item"
 					:list="cate"
 					@click="handleTabSwitch"
 					lineWidth="75"
@@ -54,109 +31,107 @@
 						transform: 'scale(1)'
 					}"
 					itemStyle="flex: 1; height: 50px;"
-				>
-				</u-tabs>
+				></u-tabs>
 			</view>
 		</view>
 
-		<!-- 标签切换加载遮罩：切换标签时显示loading动画 -->
-		<!-- v-if条件：switchingTab为true时显示 -->
 		<view v-if="switchingTab" class="tab-loading-overlay">
-			<!-- 圆形旋转loading图标，尺寸40rpx -->
 			<u-loading-icon mode="circle" size="40"></u-loading-icon>
-			<!-- 加载提示文字：灰色小字，距离图标16rpx -->
-			<view style="margin-top: 16rpx; color: #999; font-size: 26rpx;">切换中...</view>
+			<view style="margin-top: 16rpx; color: #999; font-size: 26rpx">切换中...</view>
 		</view>
 
-		<!-- 初始加载遮罩：首次进入页面时显示loading动画 -->
-		<!-- v-if条件：pageLoading为true时显示 -->
-		<view v-if="pageLoading" class="tab-loading-overlay">
-			<u-loading-icon mode="circle" size="40"></u-loading-icon>
-			<view style="margin-top: 16rpx; color: #999; font-size: 26rpx;">加载中...</view>
+		<!-- 首次进入骨架屏：模拟列表项布局，避免空白闪烁 -->
+		<view v-if="pageLoading" class="skeleton-list">
+			<view class="skeleton-item" v-for="n in 5" :key="n">
+				<u-skeleton
+					:loading="true"
+					:animate="true"
+					avatar
+					:avatarSize="40"
+					:rows="2"
+					:rowsWidth="['60%', '40%']"
+					:rowsHeight="['24rpx', '20rpx']"
+					:title="false"
+				></u-skeleton>
+			</view>
 		</view>
 
-		<!-- ==================== 关注列表区域 ==================== -->
 		<view class="list" v-if="(active === '0' || active === '') && !switchingTab && !pageLoading">
-			<view v-for="(item, index) in attenlist" :key="index" v-if="attenlist.length > 0" class="swipe-action u-border-top u-border-bottom">
+			<template v-if="attenlist.length > 0">
+			<view
+				v-for="(item, index) in attenlist"
+				:key="index"
+				class="swipe-action u-border-top u-border-bottom"
+			>
 				<view class="item">
 					<view class="business">
 						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
-							<image mode="aspectFit" :src="item.business.avatar_text"></image>
+							<image mode="aspectFit" lazy-load :src="item.business.avatar_text"></image>
 						</navigator>
 					</view>
 					<view class="info">
-						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">{{item.business.nickname}}</navigator>
-						<view class="desc" v-if="item.business.lable">{{item.business.lable}}</view>
+						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">
+							{{ item.business.nickname }}
+						</navigator>
+						<view class="desc" v-if="item.business.lable">{{ item.business.lable }}</view>
 					</view>
 				</view>
 			</view>
+		</template>
 
 			<u-empty v-if="attenlist.length === 0" mode="list" text="暂无关注"></u-empty>
 			<view class="list-count" v-if="attenlist.length > 0">没有更多数据了</view>
 		</view>
 
-		<!-- ==================== 粉丝列表区域 ==================== -->
 		<view class="list" v-if="active === '1' && !switchingTab && !pageLoading">
-			<view v-for="(item, index) in fanslist" :key="index" v-if="fanslist.length > 0" class="swipe-action u-border-top u-border-bottom">
+			<template v-if="fanslist.length > 0">
+			<view
+				v-for="(item, index) in fanslist"
+				:key="index"
+				class="swipe-action u-border-top u-border-bottom"
+			>
 				<view class="item">
 					<view class="business">
 						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
-							<image mode="aspectFit" :src="item.business.avatar_text"></image>
+							<image mode="aspectFit" lazy-load :src="item.business.avatar_text"></image>
 						</navigator>
 					</view>
 					<view class="info">
-						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">{{item.business.nickname}}</navigator>
-						<view class="desc" v-if="item.business.lable">{{item.business.lable}}</view>
+						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">
+							{{ item.business.nickname }}
+						</navigator>
+						<view class="desc" v-if="item.business.lable">{{ item.business.lable }}</view>
 					</view>
 				</view>
 			</view>
+		</template>
 
 			<u-empty v-if="fanslist.length === 0" mode="list" text="暂无粉丝"></u-empty>
 			<view class="list-count" v-if="fanslist.length > 0">没有更多数据了</view>
 		</view>
 
-		<!-- 全局提示组件：用于显示操作反馈消息（成功/错误/警告） -->
 		<u-toast ref="notice"></u-toast>
 	</view>
 </template>
 
 <script>
-/**
- * business/follow.vue - 关注/粉丝列表页
- *
- * 功能说明：
- * 1. 展示当前用户的关注列表或粉丝列表（通过 type 参数区分）
- * 2. 支持标签切换（关注 ↔ 粉丝），带缓存优化避免重复请求
- * 3. 支持关键词搜索过滤用户列表
- * 4. 数据去重处理（避免后端返回重复记录导致UI异常）
- * 5. 点击用户卡片可跳转到该用户的个人主页
- */
-
-import { checkLogin, getUserId } from '@/utils/auth.js'
 import { tabCacheMixin } from '@/mixins/tabCacheMixin'
 import { authMixin } from '@/mixins/authMixin'
 
 export default {
 	mixins: [tabCacheMixin, authMixin],
-	/**
-	 * 页面生命周期：onLoad（页面加载时触发）
-	 * 执行流程：
-	 * 1. 检查用户是否已登录（未登录则阻止后续操作）
-	 * 2. 获取当前登录用户的ID
-	 * 3. 解析页面路由参数（判断是查看关注还是粉丝）
-	 * 4. 根据参数自动切换到对应标签并加载数据
-	 */
 	onLoad() {
 		if (!this.requireLogin()) return
 
 		this.busid = this.currentUserId
 		this.initTabCache(['0', '1'])
 
+		// 通过 getCurrentPages 读取路由参数，支持从"我的粉丝"入口直达粉丝Tab
 		const pages = getCurrentPages()
 		const currentPage = pages[pages.length - 1]
 		const options = currentPage.options || {}
 
-		if(options.tab === 'fans'){
+		if (options.tab === 'fans') {
 			this.active = '1'
 			this.FansData()
 		} else {
@@ -164,17 +139,13 @@ export default {
 			this.AttentionData()
 		}
 	},
-	
-	/**
-	 * 组件响应式数据定义
-	 * 包含页面所需的所有状态变量
-	 */
+
 	data() {
 		return {
 			busid: 0,
 			cate: [
-				{name: '我的关注', id: '0'},
-				{name: '我的粉丝', id: '1'}
+				{ name: '我的关注', id: '0' },
+				{ name: '我的粉丝', id: '1' }
 			],
 			attenlist: [],
 			fanslist: [],
@@ -182,101 +153,44 @@ export default {
 			pageLoading: true
 		}
 	},
-	
-	methods: {
-		/**
-		 * 加载关注列表数据
-		 * 异步方法：向后端API请求当前用户的关注列表
-		 * 
-		 * 执行流程：
-		 * 1. 构建请求参数（用户ID + 搜索关键词）
-		 * 2. 发送POST请求到 /user/myattention 接口
-		 * 3. 处理响应数据（成功/失败/异常）
-		 * 4. 对数据进行去重处理
-		 * 5. 缓存结果以供标签切换时复用
-		 */
-		async AttentionData() {
-			try {
-				// 构建请求体：包含当前用户ID和搜索关键词
-				var data = {
-					busid: this.busid,           // 当前登录用户ID
-					keywords: this.keywords      // 搜索框输入的关键词
-				}
-				
-				// 发送异步POST请求
-				// custom: { toast: false } → 禁用全局错误提示（自行处理错误）
-				var result = await uni.$u.http.post('/user/myattention', data, { custom: { toast: false } })
-				
-				// 判断业务逻辑是否成功（code==0表示失败）
-				if(result.code == 0) {
-					// 请求失败：清空关注列表
-					this.attenlist = []
-					// 同步更新缓存为空数组
-					this.tabCache['0'] = []
-					// 提前返回，不执行后续代码
-					return false
-				}
-				
-				// 请求成功：对返回数据进行去重处理
-				// deduplicateList() 方法会根据用户ID去除重复记录
-				this.attenlist = this.deduplicateList(result.data || [])
-				// 将去重后的结果缓存起来（下次切换回此标签时直接使用）
-				this.tabCache['0'] = this.attenlist
-				
-			} catch (error) {
-				// 异常捕获：打印错误日志便于调试
-				console.error('AttentionData error:', error)
-				// 清空数据和缓存（保持一致性）
-				this.attenlist = []
-				this.tabCache['0'] = []
-				
-			} finally {
-				// 无论成功还是失败都会执行：关闭所有loading状态
-				this.switchingTab = false    // 关闭切换遮罩
-				this.pageLoading = false     // 关闭初始加载遮罩
-			}
-		},
 
-		/**
-		 * 加载粉丝列表数据
-		 * 结构与 AttentionData 完全对称，仅接口路径不同
-		 * 
-		 * @see AttentionData() - 逻辑完全相同，仅API端点为 /user/myfans
-		 */
-		async FansData() {
+	methods: {
+		async fetchFollowData(api, listField, cacheKey, errorLabel) {
 			try {
-				// 构建请求参数（与关注列表相同）
-				var data = {
+				const data = {
 					busid: this.busid,
 					keywords: this.keywords
 				}
-				
-				// 请求粉丝列表接口
-				var result = await uni.$u.http.post('/user/myfans', data, { custom: { toast: false } })
-				
-				// 处理失败情况
-				if(result.code == 0) {
-					this.fanslist = []
-					this.tabCache['1'] = []
+
+				const result = await uni.$u.http.post(api, data, { custom: { toast: false, retry: 2 } })
+
+				if (result.code == 0) {
+					this[listField] = []
+					this.tabCache[cacheKey] = []
 					return false
 				}
-				
-				// 成功：去重 + 缓存
-				this.fanslist = this.deduplicateList(result.data || [])
-				this.tabCache['1'] = this.fanslist
-				
+
+				this[listField] = this.deduplicateList(result.data || [])
+				this.tabCache[cacheKey] = this[listField]
 			} catch (error) {
-				console.error('FansData error:', error)
-				this.fanslist = []
-				this.tabCache['1'] = []
-				
+				console.error(errorLabel + ' error:', error)
+				this[listField] = []
+				this.tabCache[cacheKey] = []
 			} finally {
-				// 统一关闭loading状态
 				this.switchingTab = false
 				this.pageLoading = false
 			}
 		},
 
+		async AttentionData() {
+			await this.fetchFollowData('/user/myattention', 'attenlist', '0', 'AttentionData')
+		},
+
+		async FansData() {
+			await this.fetchFollowData('/user/myfans', 'fanslist', '1', 'FansData')
+		},
+
+		// eslint-disable-next-line no-unused-vars
 		onTabCacheHit(tabId) {
 			this.attenlist = this.tabCache['0'] || []
 			this.fanslist = this.tabCache['1'] || []
@@ -288,53 +202,28 @@ export default {
 		},
 
 		search() {
-			// 判断当前处于哪个标签页
-			if(this.active == '0'){
-				// 关注标签：先清空再重新加载
+			if (this.active == '0') {
 				this.attenlist = []
 				this.AttentionData()
-			}
-			else if(this.active == '1'){
-				// 粉丝标签：先清空再重新加载
+			} else if (this.active == '1') {
 				this.fanslist = []
 				this.FansData()
 			}
 		},
 
-		/**
-		 * 数据去重工具方法
-		 * 解决问题：后端可能因数据库异常返回重复的关注/粉丝记录
-		 * 
-		 * 去重策略：
-		 * - 使用 Map 数据结构记录已出现的用户ID
-		 * - 遍历列表时检查每个用户的ID是否已存在
-		 * - 存在则过滤掉（return false），不存在则保留并记录
-		 * 
-		 * @param {Array} list - 原始数据列表（可能包含重复项）
-		 * @returns {Array} 去重后的新数组
-		 * 
-		 * 使用示例：
-		 * this.attenlist = this.deduplicateList(result.data)
-		 */
+		// 数据去重：后端可能返回重复记录，按用户ID去重
 		deduplicateList(list) {
-			// 边界检查：空数组或null直接返回空数组
 			if (!list || list.length === 0) return []
-			
-			// 创建Map用于记录已出现的用户ID（键值对：ID→布尔值）
+
 			const seen = new Map()
-			
-			// 使用filter方法过滤重复项
+
 			return list.filter(item => {
-				// 提取去重关键字段（优先级：business.id > busid > id）
 				const key = item.business?.id || item.busid || item.id
-				
-				// 检查该ID是否已经存在
+
 				if (seen.has(key)) {
-					// 已存在：返回false，过滤掉这条重复数据
 					return false
 				}
-				
-				// 不存在：将ID标记为已出现，保留这条数据
+
 				seen.set(key, true)
 				return true
 			})
@@ -344,141 +233,135 @@ export default {
 </script>
 
 <style lang="scss">
-/* ==================== 页面主容器样式 ==================== */
 .content {
-	width: 100%;                          /* 宽度撑满父容器 */
-	background-color: $zl-bg-color;       /* 使用SCSS变量：浅灰背景色 */
-	min-height: 100vh;                    /* 最小高度占满整个视口（确保滚动正常） */
+	width: 100%;
+	background-color: $zl-bg-color;
+	min-height: 100vh;
 }
 
-/* ==================== Loading遮罩层样式 ==================== */
 .tab-loading-overlay {
-	display: flex;                        /* 弹性布局 */
-	flex-direction: column;               /* 主轴方向：垂直排列（图标在上，文字在下） */
-	align-items: center;                  /* 交叉轴居中：水平居中 */
-	justify-content: center;              /* 主轴居中：垂直居中 */
-	padding: 120rpx 0;                    /* 内边距：上下120rpx，左右0 */
-	background-color: rgba(255, 255, 255, 0.95);  /* 白色半透明背景（轻微透明度） */
-	position: relative;                   /* 相对定位（作为z-index的参考点） */
-	z-index: 5;                           /* 层级高于列表内容但低于顶部导航 */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 0;
+	background-color: rgba(255, 255, 255, 0.95);
+	position: relative;
+	z-index: 5;
 }
 
-/* ==================== 顶部固定头部样式 ==================== */
+.skeleton-list {
+	padding: 20rpx;
+
+	.skeleton-item {
+		background-color: white;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		border-radius: 16rpx;
+		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+	}
+}
+
 .header {
-	background-color: white;              /* 白色背景 */
-	position: sticky;                     /* 粘性定位：滚动到顶部时固定不动 */
-	top: 0;                               /* 距离顶部0（紧贴屏幕顶端） */
-	z-index: 10;                          /* 最高层级（确保在所有内容之上） */
+	background-color: white;
+	position: sticky;
+	top: 0;
+	z-index: 10;
 	transform: translateZ(0);
 	will-change: transform;
 	backface-visibility: hidden;
 	-webkit-backface-visibility: hidden;
 }
 
-/* ==================== 搜索框区域样式 ==================== */
 .search {
-	height: 120rpx;                       /* 固定高度120rpx */
-	background: $zl-gradient;             /* 使用SCSS变量：主题渐变色背景 */
-	padding: 0 40rpx;                     /* 内边距：左右各40rpx */
-	display: flex;                        /* 弹性布局 */
-	align-items: center;                  /* 垂直居中对齐（让搜索框垂直居中） */
-	box-shadow: 0 4rpx 12rpx rgba(60, 156, 255, 0.3);  /* 底部阴影：蓝色系，增加层次感 */
+	height: 120rpx;
+	background: $zl-gradient;
+	padding: 0 40rpx;
+	display: flex;
+	align-items: center;
+	box-shadow: 0 4rpx 12rpx rgba(60, 156, 255, 0.3);
 }
 
-/* ==================== 标签导航栏样式 ==================== */
 .nav {
-	background-color: white;              /* 白色背景 */
-	border-bottom: 1rpx solid $zl-border-color;  /* 底部分割线：使用SCSS变量颜色 */
+	background-color: white;
+	border-bottom: 1rpx solid $zl-border-color;
 }
 
-/* ==================== 列表容器样式 ==================== */
 .list {
-	padding: 20rpx;                       /* 外边距：四周20rpx间距 */
+	padding: 20rpx;
 
-	/* 单个用户卡片样式 */
 	.item {
-		display: flex;                     /* 弹性布局：水平排列头像和信息 */
-		align-items: center;               /* 垂直居中对齐 */
-		background-color: white;           /* 卡片白色背景 */
-		padding: 24rpx;                    /* 内边距24rpx */
-		margin-bottom: 20rpx;              /* 卡片之间间距20rpx */
-		border-radius: 16rpx;              /* 圆角半径16rpx */
-		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);  /* 轻微阴影：增加卡片悬浮感 */
+		display: flex;
+		align-items: center;
+		background-color: white;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		border-radius: 16rpx;
+		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
 	}
 }
 
-/* ==================== 头像区域样式 ==================== */
 .business {
-	width: 100rpx;                        /* 固定宽度100rpx */
-	height: 100rpx;                       /* 固定高度100rpx（正方形） */
-	flex-shrink: 0;                       /* 禁止压缩（确保头像不被挤压变形） */
-	margin-right: 24rpx;                  /* 右侧间距24rpx（与信息区的间隔） */
+	width: 100rpx;
+	height: 100rpx;
+	flex-shrink: 0;
+	margin-right: 24rpx;
 
-	/* 头像图片容器 */
 	.avatar {
-		width: 100%;                       /* 宽度继承父元素100% */
-		height: 100%;                      /* 高度继承父元素100% */
-		border-radius: $uni-border-radius-circle;  /* 圆形裁剪（使用SCSS变量） */
-		overflow: hidden;                 /* 隐藏超出圆形范围的部分 */
-		background-color: $uni-bg-color-grey;     /* 图片加载前的占位背景色（灰色） */
+		width: 100%;
+		height: 100%;
+		border-radius: $uni-border-radius-circle;
+		overflow: hidden;
+		background-color: $uni-bg-color-grey;
 
-		/* 头像图片本身 */
 		image {
-			width: 100%;                   /* 宽度填满容器 */
-			height: 100%;                  /* 高度填满容器 */
+			width: 100%;
+			height: 100%;
 		}
 	}
 }
 
-/* ==================== 用户信息区域样式 ==================== */
 .info {
-	flex: 1;                              /* 弹性增长：占据剩余的所有空间 */
-	display: flex;                        /* 弹性布局 */
-	flex-direction: column;               /* 垂直排列（昵称在上，简介在下） */
-	justify-content: center;              /* 垂直居中（让内容在卡片内垂直居中） */
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 
-	/* 用户昵称样式 */
 	.nickname {
-		font-size: $uni-font-size-base;    /* 字体大小：使用SCSS基础字号变量 */
-		font-weight: bold;                 /* 加粗字体（突出显示） */
-		color: $uni-text-color;            /* 文字颜色：主文本色（深色） */
-		margin-bottom: 8rpx;              /* 与下方简介的间距8rpx */
+		font-size: $uni-font-size-base;
+		font-weight: bold;
+		color: $uni-text-color;
+		margin-bottom: 8rpx;
 	}
 
-	/* 用户简介/标签样式 */
 	.desc {
-		font-size: 24rpx;                  /* 字体较小：24rpx（次要信息） */
-		color: $uni-text-color-grey;       /* 灰色文字（次要信息用浅色） */
-		overflow: hidden;                 /* 隐藏溢出内容 */
-		white-space: nowrap;              /* 禁止换行（强制单行显示） */
-		text-overflow: ellipsis;          /* 文本溢出时显示省略号(...) */
+		font-size: 24rpx;
+		color: $uni-text-color-grey;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 }
 
-/* ==================== 列表底部提示样式 ==================== */
 .list-count {
-	text-align: center;                   /* 文字居中对齐 */
-	font-size: 24rpx;                     /* 小字号：24rpx */
-	color: $uni-text-color-grey;         /* 灰色文字（弱化显示） */
-	padding: 20rpx 0;                    /* 上下内边距20rpx */
+	text-align: center;
+	font-size: 24rpx;
+	color: $uni-text-color-grey;
+	padding: 20rpx 0;
 }
 
-/* ==================== 标签栏深度样式覆盖 ==================== */
-/* 使用 ::v-deep 穿透组件作用域，修改uView内部样式 */
 .nav {
 	::v-deep .u-tabs {
-		/* 标签导航条容器：强制等分布局 */
 		.u-tabs__wrapper__nav {
-			display: flex !important;      /* 弹性布局 */
-			width: 100% !important;        /* 宽度100%（撑满整行） */
+			display: flex !important;
+			width: 100% !important;
 		}
 
-		/* 单个标签项：等分且居中 */
 		.u-tabs__wrapper__nav__item {
-			flex: 1 !important;            /* 等分剩余空间 */
-			display: flex !important;       /* 弹性布局 */
-			justify-content: center !important;  /* 水平居中 */
-			align-items: center !important;     /* 垂直居中 */
+			flex: 1 !important;
+			display: flex !important;
+			justify-content: center !important;
+			align-items: center !important;
 		}
 	}
 }

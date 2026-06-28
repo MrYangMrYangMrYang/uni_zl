@@ -2,39 +2,47 @@
 	<view class="comlist">
 		<view class="list" v-if="comlist.length > 0">
 			<view class="item" v-for="(item, index) in comlist" :key="index">
-				<!-- 评论头部：头像 + 用户信息 + 时间 -->
 				<view class="item-header">
 					<navigator :url="`/pages-business/user?busid=${item.busid}`" class="avatar-link">
-						<image class="avatar" mode="aspectFill" :src="item.business.avatar_text"></image>
+						<image class="avatar" mode="aspectFill" lazy-load :src="item.business.avatar_text"></image>
 					</navigator>
 					<view class="item-author">
 						<view class="author-name-row">
-							<text class="author-name">{{item.business.nickname}}</text>
-							<!-- 楼主标识 -->
+							<text class="author-name">{{ item.business.nickname }}</text>
 							<u-tag v-if="item.busid == ftrid" text="楼主" type="error" plain size="mini"></u-tag>
-							<!-- 已采纳标识 -->
-							<u-tag v-else-if="status == '1' && cnrid && item.status =='1'" text="已采纳" type="success" plain size="mini"></u-tag>
+							<u-tag
+								v-else-if="status == '1' && cnrid && item.status == '1'"
+								text="已采纳"
+								type="success"
+								plain
+								size="mini"
+							></u-tag>
 						</view>
-						<text class="author-desc">{{item.business.lable || '暂无简介'}}</text>
+						<text class="author-desc">{{ item.business.lable || '暂无简介' }}</text>
 					</view>
-					<text class="item-time">{{item.createtime_text}}</text>
+					<text class="item-time">{{ item.createtime_text }}</text>
 				</view>
 
-				<!-- 评论内容 -->
 				<view class="item-content">
-					<text v-if="item.parent_text" class="reply-to">@{{item.parent_text}}：</text>{{item.content}}
+					<text v-if="item.parent_text" class="reply-to">@{{ item.parent_text }}：</text>
+					{{ item.content }}
 				</view>
 
-				<!-- 底部操作栏：点赞 + 展开/收起回复 + 更多 -->
 				<view class="item-footer">
 					<view class="footer-left">
 						<view class="action-btn like-btn" @click="LikeToggle(item)">
-							<u-icon :name="item.like_status ? 'thumb-up-fill' : 'thumb-up'" :color="item.like_status ? '#19be6b' : '#999'" size="18"></u-icon>
-							<text :class="{ 'active': item.like_status }">{{ item.likes_count > 0 ? item.likes_count : '点赞' }}</text>
+							<u-icon
+								:name="item.like_status ? 'thumb-up-fill' : 'thumb-up'"
+								:color="item.like_status ? '#19be6b' : '#999'"
+								size="18"
+							></u-icon>
+							<text :class="{ active: item.like_status }">
+								{{ item.likes_count > 0 ? item.likes_count : '点赞' }}
+							</text>
 						</view>
 						<view class="action-btn comment-btn" @click="CommentToggle(index)">
 							<u-icon name="chat" :color="item.show ? '#19be6b' : '#999'" size="18"></u-icon>
-							<text v-if="item.comment_count > 0">展开{{item.comment_count}}条回复</text>
+							<text v-if="item.comment_count > 0">展开{{ item.comment_count }}条回复</text>
 							<text v-else>暂无回复</text>
 							<u-icon :name="item.show ? 'arrow-up' : 'arrow-down'" size="12" color="#999"></u-icon>
 						</view>
@@ -47,8 +55,8 @@
 				</view>
 
 				<!-- 递归渲染子评论 -->
-				<comment 
-					v-if="item.comment_count > 0 && item.show" 
+				<comment
+					v-if="item.comment_count > 0 && item.show && depth < maxDepth"
 					:postid="item.postid"
 					:pid="item.id"
 					:busid="item.busid"
@@ -56,11 +64,16 @@
 					:ftrid="ftrid"
 					:status="status"
 					:cnrid="cnrid"
+					:depth="depth + 1"
 				></comment>
+				<!-- 层级过深时折叠提示，避免无限递归导致性能问题 -->
+				<view v-else-if="item.comment_count > 0 && item.show && depth >= maxDepth" class="depth-limit-hint">
+					<u-icon name="more-circle" size="14" color="#999"></u-icon>
+					<text>回复层级较深，已折叠</text>
+				</view>
 			</view>
 		</view>
 
-		<!-- 操作菜单弹出层 -->
 		<action-menu
 			v-model="MenuShow"
 			:showComment="showCommentBtn"
@@ -72,18 +85,30 @@
 			@delete="delcom"
 		></action-menu>
 
-		<!-- 评论输入弹出层 -->
 		<u-popup mode="bottom" :show="AnswerShow" @close="AnswerShow = false" round="10">
-            <view class="answer">
+			<view class="answer">
 				<view class="answer-header">
 					<text class="answer-title">撰写评论</text>
 					<u-icon name="close" size="20" color="#999" @click="AnswerShow = false"></u-icon>
 				</view>
 				<u--form labelPosition="top" :model="answer" :rules="rules" ref="answer">
 					<u-form-item prop="content" ref="content">
-						<u--textarea v-model="answer.content" placeholder="请输入您的评论..." count height="150"></u--textarea>
+						<u--textarea
+							v-model="answer.content"
+							placeholder="请输入您的评论..."
+							count
+							height="150"
+						></u--textarea>
 					</u-form-item>
-					<u-button type="primary" shape="circle" @click="submit" :disabled="!answer.content" :customStyle="{background: 'linear-gradient(135deg, #0173de, #4cd964)'}">提交评论</u-button>
+					<u-button
+						type="primary"
+						shape="circle"
+						@click="submit"
+						:disabled="!answer.content"
+						:customStyle="{ background: 'linear-gradient(135deg, #0173de, #4cd964)' }"
+					>
+						提交评论
+					</u-button>
 				</u--form>
 			</view>
 		</u-popup>
@@ -93,325 +118,283 @@
 </template>
 
 <script>
-/**
- * @component comment
- * @description 评论组件（支持递归嵌套二级评论）
- * 功能：展示评论列表、点赞/回复/采纳/删除操作、递归渲染子评论
- * @example <comment :postid="1" :pid="0" :busid="1" :brid="1" :ftrid="1" :status="'0'" :cnrid="0"></comment>
- */
-	import Vue from 'vue'
-	import ActionMenu from './ActionMenu.vue'
+import Vue from 'vue'
+import ActionMenu from './ActionMenu.vue'
 
-	export default {
-		components: {
-			comment: () => import('./comment.vue'),
-			ActionMenu
-		},
-		
-		props: {
-			show: {
-				type: Boolean,
-				default: false
-			},
-			/** @type {number} 帖子ID */
-			postid: {
-				type: Number,
-				require: true,
-				default: 0,
-			},
-			/** @type {number} 父级评论ID，0表示一级评论 */
-			pid: {
-				type: Number,
-				require: true,
-				default: 0,
-			},
-			/** @type {number} 被评论的用户ID（用于@提醒） */
-			busid: {
-				type: Number,
-				require: true,
-				default: 0,
-			},
-			/** @type {number} 当前登录用户ID */
-			brid: {
-				type: Number,
-				require: true,
-				default: 0,
-			},
-			/** @type {number} 帖子作者（楼主）的用户ID */
-			ftrid: {
-				type: Number,
-				require: true,
-				default: 0,
-			},
-			/** @type {number} 已采纳的评论ID，0表示未采纳 */
-			cnrid: {
-				type: Number,
-				require: true,
-				default: 0,
-			},
-			/** @type {string} 帖子解决状态：'0'未解决 / '1'已解决 */
-			status: {
-				type: String,
-				require: true,
-				default: 0,
-			},
-		},
+export default {
+	components: {
+		// 异步加载自身实现递归渲染子评论，避免同步引用导致的循环依赖
+		comment: () => import('./comment.vue'),
+		ActionMenu
+	},
 
-		created()
-		{
-			this.CommentData()
+	props: {
+		show: {
+			type: Boolean,
+			default: false
 		},
+		postid: {
+			type: Number,
+			require: true,
+			default: 0
+		},
+		// 父评论ID，用于拉取该评论下的回复
+		pid: {
+			type: Number,
+			require: true,
+			default: 0
+		},
+		// 评论作者ID
+		busid: {
+			type: Number,
+			require: true,
+			default: 0
+		},
+		// 当前登录用户ID（browser id），用于权限判断
+		brid: {
+			type: Number,
+			require: true,
+			default: 0
+		},
+		// 帖子作者ID（father id），楼主标识与采纳权限判断
+		ftrid: {
+			type: Number,
+			require: true,
+			default: 0
+		},
+		// 已采纳评论ID（caina id），null 表示未采纳
+		cnrid: {
+			type: Number,
+			require: true,
+			default: 0
+		},
+		// 帖子状态：'1' 已解决，'0' 未解决
+		status: {
+			type: String,
+			require: true,
+			default: '0'
+		},
+		// 当前递归深度，用于限制评论树无限嵌套
+		depth: {
+			type: Number,
+			default: 0
+		}
+	},
 
-		data()
-		{
-			return {
-				MenuShow: false,
-				AnswerShow: false,
-				comid: 0,
-				accept: 0,
-				comstatus: '',
-				answer: {
-					content: '',
-				},
-				comlist: [],
-				rules: {
-					content: {
-						type: 'string',
-						required: true,
-						message: '内容不能为空',
-						trigger: ['blur', 'change']
-					},
+	created() {
+		this.CommentData()
+	},
+
+	data() {
+		return {
+			MenuShow: false,
+			AnswerShow: false,
+			comid: 0,
+			accept: 0,
+			comstatus: '',
+			answer: {
+				content: ''
+			},
+			comlist: [],
+			// 正在点赞的评论ID集合，防止重复请求
+			likePending: new Set(),
+			// 评论树最大递归深度，防止过深嵌套影响渲染性能
+			maxDepth: 6,
+			rules: {
+				content: {
+					type: 'string',
+					required: true,
+					message: '内容不能为空',
+					trigger: ['blur', 'change']
 				}
+			}
+		}
+	},
+
+	computed: {
+		// 当前用户非被采纳者时显示评论按钮
+		showCommentBtn() {
+			return this.brid != this.accept
+		},
+		// 仅帖子作者可采纳，且不能采纳自己的回答
+		showAcceptBtn() {
+			return this.brid == this.ftrid && this.accept != this.ftrid
+		},
+		// 帖子作者或被采纳者可删除评论
+		showDeleteBtn() {
+			return this.brid == this.ftrid || this.brid == this.accept
+		},
+		// 采纳状态文案：accepted=本条已采纳，resolved=帖子已解决（本条未被采纳）
+		acceptStatusText() {
+			if (this.status == '1' && this.cnrid && this.comstatus == '1') return 'accepted'
+			if (this.status == '1' && this.cnrid) return 'resolved'
+			return ''
+		}
+	},
+
+	methods: {
+		CommentToggle(index) {
+			this.comlist[index].show = !this.comlist[index].show
+		},
+
+		async CommentData() {
+			try {
+				const data = {
+					postid: this.postid,
+					pid: this.pid,
+					busid: this.busid ? this.busid : 0
+				}
+
+				const result = await uni.$u.http.post('/comment/index', data, {
+					custom: { toast: false, retry: 2 }
+				})
+
+				this.comlist = result.data.length > 0 ? result.data : []
+
+				// Vue.set 确保 show 属性是响应式的
+				this.comlist.map(item => {
+					Vue.set(item, 'show', false)
+				})
+			} catch (error) {
+				console.error('CommentData error:', error)
 			}
 		},
 
-		computed: {
-			showCommentBtn() {
-				return this.brid != this.accept
-			},
-			showAcceptBtn() {
-				return this.brid == this.ftrid && this.accept != this.ftrid
-			},
-			showDeleteBtn() {
-				return this.brid == this.ftrid || this.brid == this.accept
-			},
-			acceptStatusText() {
-				if (this.status == '1' && this.cnrid && this.comstatus == '1') return 'accepted'
-				if (this.status == '1' && this.cnrid) return 'resolved'
-				return ''
+		async LikeToggle(comment) {
+			if (this.likePending.has(comment.id)) return
+			if (!this.brid) {
+				uni.$toast.error('请先登录')
+				return false
+			}
+
+			this.likePending.add(comment.id)
+			try {
+				const data = {
+					comid: comment.id,
+					postid: this.postid,
+					busid: this.brid
+				}
+
+				const result = await uni.$u.http.post('/comment/like', data)
+
+				if (result.code == 0) {
+					uni.$toast.error(result.msg)
+					return false
+				}
+
+				uni.$toast.success(result.msg)
+
+				// 乐观更新UI：立即切换点赞状态和计数
+				comment.like_status = !comment.like_status
+				comment.likes_count = comment.like_status ? ++comment.likes_count : --comment.likes_count
+			} catch (error) {
+				console.error('LikeToggle error:', error)
+				uni.$toast.error('操作失败，请稍后重试')
+			} finally {
+				this.likePending.delete(comment.id)
 			}
 		},
 
-		methods:{
-			
-			/**
-			 * 切换子评论展开/收起状态
-			 * @param {number} index - 当前评论在列表中的索引
-			 */
-			CommentToggle(index)
-			{
-				this.comlist[index].show = !this.comlist[index].show
-			},
+		answers(comment) {
+			if (!this.brid) {
+				uni.$toast.error('请先登录')
+				return false
+			}
 
-			/**
-			 * 获取评论列表数据
-			 * 从后端接口加载指定帖子和父级下的评论
-			 * @returns {Promise<void>}
-			 */
-			async CommentData()
-			{
-				try {
-					var data = {
-						postid: this.postid,
-						pid: this.pid,
-						busid: this.busid ? this.busid : 0
-					}
+			// 记录当前操作评论的信息，供 ActionMenu 权限判断使用
+			this.comid = comment.id
+			this.accept = comment.busid
+			this.comstatus = comment.status
 
-					var result = await uni.$u.http.post('/comment/index', data)
+			this.MenuShow = true
+		},
 
-					this.comlist = result.data.length > 0 ? result.data : []
+		async delcom() {
+			if (!this.brid) {
+				uni.$toast.error('请先登录')
+				return false
+			}
 
-					// 为每条评论添加show属性控制子评论展开状态，Vue.set确保响应式
-					this.comlist.map((item) => {
-						Vue.set(item, 'show', false)
-					})
-				} catch (error) {
-					console.error('CommentData error:', error)
+			try {
+				const data = {
+					postid: this.postid,
+					busid: this.brid,
+					comid: this.comid
 				}
-			},
 
-			/**
-			 * 切换点赞状态
-			 * @param {object} comment - 当前操作的评论对象
-			 * @param {number} comment.id - 评论ID
-			 * @param {boolean} comment.like_status - 当前点赞状态
-			 * @param {number} comment.likes_count - 当前点赞数
-			 */
-			async LikeToggle(comment)
-			{	
-				if(!this.brid)
-				{
-					uni.$toast.error('请先登录')
-					return false
-				}
-				
-				try {
-					var data = {
-						comid: comment.id,
-						postid: this.postid,
-						busid: this.brid
-					}
-					
-					var result = await uni.$u.http.post('/comment/like', data)
-					
-					if(result.code == 0)
-					{
-						uni.$toast.error(result.msg)
-						return false
-					}
-					
-					uni.$toast.success(result.msg)
-				
-					// 乐观更新UI：立即切换点赞状态和计数
-					comment.like_status = !comment.like_status
-					comment.likes_count = comment.like_status ? ++comment.likes_count : --comment.likes_count
-				} catch (error) {
-					console.error('LikeToggle error:', error)
-					uni.$toast.error('操作失败，请稍后重试')
-				}
-			},
+				const result = await uni.$u.http.post('/comment/del', data)
 
-			/**
-			 * 显示操作菜单
-			 * @param {object} comment - 点击的评论对象
-			 * @param {number} comment.id - 评论ID
-			 * @param {number} comment.busid - 评论发布者ID
-			 * @param {string} comment.status - 评论状态
-			 */
-			answers(comment)
-			{
-				if(!this.brid)
-				{
-					uni.$toast.error('请先登录')
-					return false
-				}
-				
-				this.comid = comment.id
-				this.accept = comment.busid
-				this.comstatus = comment.status
-
-				this.MenuShow = true
-			},
-
-			/**
-			 * 删除评论
-			 * 仅评论作者或被评论者可以删除
-			 * @returns {Promise<void>}
-			 */
-			async delcom()
-			{
-				if(!this.brid)
-				{
-					uni.$toast.error('请先登录')
-					return false
-				}
-				
-				try {
-					var data = {
-						postid: this.postid,
-						busid: this.brid,
-						comid: this.comid,
-					}
-					
-					var result = await uni.$u.http.post('/comment/del', data)
-					
-					if(result.code == 0)
-					{
-						uni.$toast.error(result.msg)
-						return false
-					}
-					
-					uni.$toast.success(result.msg)
-							
-					this.MenuShow = false
-					this.AnswerShow = false
-				} catch (error) {
-					console.error('delcom error:', error)
-					uni.$toast.error('删除失败，请稍后重试')
-				}
-			},
-
-			/**
-			 * 采纳评论（标记为最佳答案）
-			 * 仅帖子作者可以采纳他人的回答
-			 * @returns {Promise<void>}
-			 */
-			async select()
-			{
-				if(!this.brid)
-				{
-					uni.$toast.error('请先登录')
-					return false
-				}
-				
-				try {
-					var data = {
-						postid: this.postid,
-						comid: this.comid,
-						accept: this.accept
-					}
-					
-					var result = await uni.$u.http.post('/post/select',data)
-					
-					if(result.code == 0)
-					{
-						uni.$toast.error(result.msg)
-						return false
-					}
-					
-					uni.$toast.success(result.msg)
-				
-					this.MenuShow = false
-					this.AnswerShow = false
-				} catch (error) {
-					console.error('select error:', error)
-					uni.$toast.error('操作失败，请稍后重试')
-				}
-			},
-
-			/**
-			 * 提交评论
-			 * 先进行表单验证，通过后才发送请求
-			 * @returns {Promise<void>}
-			 */
-			submit()
-			{
-				if(!this.brid)
-				{
-					uni.$toast.error('请先登录')
+				if (result.code == 0) {
+					uni.$toast.error(result.msg)
 					return false
 				}
 
-				this.$refs.answer.validate()
-				.then(async res => {
+				uni.$toast.success(result.msg)
+
+				this.MenuShow = false
+				this.AnswerShow = false
+			} catch (error) {
+				console.error('delcom error:', error)
+				uni.$toast.error('删除失败，请稍后重试')
+			}
+		},
+
+		async select() {
+			if (!this.brid) {
+				uni.$toast.error('请先登录')
+				return false
+			}
+
+			try {
+				const data = {
+					postid: this.postid,
+					comid: this.comid,
+					accept: this.accept
+				}
+
+				const result = await uni.$u.http.post('/post/select', data)
+
+				if (result.code == 0) {
+					uni.$toast.error(result.msg)
+					return false
+				}
+
+				uni.$toast.success(result.msg)
+
+				this.MenuShow = false
+				this.AnswerShow = false
+			} catch (error) {
+				console.error('select error:', error)
+				uni.$toast.error('操作失败，请稍后重试')
+			}
+		},
+
+		submit() {
+			if (!this.brid) {
+				uni.$toast.error('请先登录')
+				return false
+			}
+
+			this.$refs.answer
+				.validate()
+				.then(async () => {
 					try {
-						var data = {
+						const data = {
 							postid: this.postid,
 							pid: this.pid,
-							content:this.answer.content,
+							content: this.answer.content,
 							busid: this.busid
 						}
-						
-						var result = await uni.$u.http.post('/post/answer',data)
-						
-						if(result.code == 0)
-						{
+
+						const result = await uni.$u.http.post('/post/answer', data)
+
+						if (result.code == 0) {
 							uni.$toast.error(result.msg)
 							return false
 						}
-						
+
 						uni.$toast.success(result.msg)
-						
+
 						this.MenuShow = false
 						this.AnswerShow = false
 					} catch (error) {
@@ -423,159 +406,163 @@
 					console.log(error)
 					uni.$toast.error('内容不能为空')
 				})
-			}
 		}
 	}
+}
 </script>
 
 <style lang="scss">
-	/* 评论列表 */
-	.comlist {
-		margin-top: 16rpx;
-	}
+.comlist {
+	margin-top: 16rpx;
+}
 
-	/* 嵌套的二级评论：补偿父级 padding，保持与一级评论相同宽度 */
-	.item > .comlist {
-		margin-left: -30rpx;
-		margin-right: -30rpx;
-		padding-left: 30rpx;
-		padding-right: 30rpx;
-	}
+.depth-limit-hint {
+	display: flex;
+	align-items: center;
+	gap: 8rpx;
+	padding: 16rpx 30rpx;
+	color: #999;
+	font-size: 24rpx;
+}
 
-	.list .item {
-		margin-bottom: 20rpx;
-		padding: 30rpx;
-		background: #fff;
-		border-radius: 16rpx;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-	}
+/* 嵌套的二级评论：补偿父级 padding，保持与一级评论相同宽度 */
+.item > .comlist {
+	margin-left: -30rpx;
+	margin-right: -30rpx;
+	padding-left: 30rpx;
+	padding-right: 30rpx;
+}
 
-	/* 评论头部 */
-	.item-header {
-		display: flex;
-		align-items: flex-start;
+.list .item {
+	margin-bottom: 20rpx;
+	padding: 30rpx;
+	background: #fff;
+	border-radius: 16rpx;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
 
-		.avatar-link {
-			flex-shrink: 0;
+.item-header {
+	display: flex;
+	align-items: flex-start;
 
-			.avatar {
-				width: 72rpx;
-				height: 72rpx;
-				border-radius: 50%;
-				overflow: hidden;
-				background-color: #f5f7fa;
-			}
-		}
+	.avatar-link {
+		flex-shrink: 0;
 
-		.item-author {
-			flex: 1;
-			margin-left: 20rpx;
-
-			.author-name-row {
-				display: flex;
-				align-items: center;
-
-				.author-name {
-					font-size: 28rpx;
-					font-weight: bold;
-					color: #303133;
-				}
-			}
-
-			.author-desc {
-				font-size: 24rpx;
-				color: #909399;
-				margin-top: 8rpx;
-				display: block;
-			}
-		}
-
-		.item-time {
-			font-size: 22rpx;
-			color: #c0c4cc;
-			flex-shrink: 0;
+		.avatar {
+			width: 72rpx;
+			height: 72rpx;
+			border-radius: 50%;
+			overflow: hidden;
+			background-color: #f5f7fa;
 		}
 	}
 
-	/* 评论内容 */
-	.item-content {
-		padding: 24rpx 0;
-		font-size: 28rpx;
-		color: #303133;
-		line-height: 1.6;
-		word-break: break-all;
+	.item-author {
+		flex: 1;
+		margin-left: 20rpx;
 
-		.reply-to {
-			color: #3c9cff;
-		}
-	}
-
-	/* 底部操作栏 */
-	.item-footer {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding-top: 20rpx;
-		border-top: 1rpx solid #f5f5f5;
-
-		.footer-left {
+		.author-name-row {
 			display: flex;
 			align-items: center;
 
-			.action-btn {
-				display: flex;
-				align-items: center;
-				padding: 10rpx 20rpx;
-				border-radius: 8rpx;
-				background: #f7f8fa;
-
-				text {
-					font-size: 24rpx;
-					color: #909399;
-					margin-left: 6rpx;
-
-					&.active {
-						color: #19be6b;
-					}
-				}
+			.author-name {
+				font-size: 28rpx;
+				font-weight: bold;
+				color: #303133;
 			}
 		}
 
-		.footer-right {
-			.more-btn {
-				width: 52rpx;
-				height: 52rpx;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				border-radius: 50%;
-
-				&:active {
-					background: #f5f5f5;
-				}
-			}
+		.author-desc {
+			font-size: 24rpx;
+			color: #909399;
+			margin-top: 8rpx;
+			display: block;
 		}
 	}
 
-	/* 评论输入框 */
-	.answer {
-		padding: 40rpx 30rpx;
+	.item-time {
+		font-size: 22rpx;
+		color: #c0c4cc;
+		flex-shrink: 0;
 	}
+}
 
-	.answer-header {
+.item-content {
+	padding: 24rpx 0;
+	font-size: 28rpx;
+	color: #303133;
+	line-height: 1.6;
+	word-break: break-all;
+
+	.reply-to {
+		color: #3c9cff;
+	}
+}
+
+.item-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: 20rpx;
+	border-top: 1rpx solid #f5f5f5;
+
+	.footer-left {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 30rpx;
+
+		.action-btn {
+			display: flex;
+			align-items: center;
+			padding: 10rpx 20rpx;
+			border-radius: 8rpx;
+			background: #f7f8fa;
+
+			text {
+				font-size: 24rpx;
+				color: #909399;
+				margin-left: 6rpx;
+
+				&.active {
+					color: #19be6b;
+				}
+			}
+		}
 	}
 
-	.answer-title {
-		font-size: 34rpx;
-		font-weight: bold;
-		color: #303133;
-	}
+	.footer-right {
+		.more-btn {
+			width: 52rpx;
+			height: 52rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 50%;
 
-	.answer :deep(.u-form) .u-button {
-		margin-top: 40rpx;
+			&:active {
+				background: #f5f5f5;
+			}
+		}
 	}
+}
+
+.answer {
+	padding: 40rpx 30rpx;
+}
+
+.answer-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 30rpx;
+}
+
+.answer-title {
+	font-size: 34rpx;
+	font-weight: bold;
+	color: #303133;
+}
+
+.answer :deep(.u-form) .u-button {
+	margin-top: 40rpx;
+}
 </style>

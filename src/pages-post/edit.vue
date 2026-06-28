@@ -1,6 +1,5 @@
 <template>
 	<view class="page-container">
-		<!-- 头部区域：渐变背景 + 标题描述 -->
 		<view class="header-section">
 			<view class="header-content">
 				<text class="header-title">修改提问</text>
@@ -8,19 +7,18 @@
 			</view>
 		</view>
 
-		<!-- 表单区域 -->
 		<view class="form-section" v-if="loaded">
-			<!-- 标题输入项 -->
 			<view class="form-item">
 				<text class="form-label">提问标题</text>
 				<u--input
 					v-model="post.title"
 					placeholder="请输入提问标题，让更多人看到"
 					border="surround"
+					maxlength="50"
+					clearable
 				></u--input>
 			</view>
 
-			<!-- 描述输入项：多行文本域 -->
 			<view class="form-item">
 				<text class="form-label">问题描述</text>
 				<u--textarea
@@ -33,7 +31,6 @@
 				></u--textarea>
 			</view>
 
-			<!-- 分类选择项 -->
 			<view class="form-item" @click="CateShow = true">
 				<text class="form-label">问题分类</text>
 				<u--input
@@ -49,31 +46,38 @@
 				</u--input>
 			</view>
 
-			<!-- 分类选择器弹出面板 -->
-			<u-picker :defaultIndex="CateDefault" :show="CateShow" :columns="CateData" keyName="name" @cancel="CateShow = false" @confirm="CateCheck"></u-picker>
+			<u-picker
+				:defaultIndex="CateDefault"
+				:show="CateShow"
+				:columns="CateData"
+				keyName="name"
+				@cancel="CateShow = false"
+				@confirm="CateCheck"
+			></u-picker>
 
-			<!-- 积分输入项 -->
 			<view class="form-item">
 				<text class="form-label">悬赏积分</text>
-				<u--input
-					v-model="post.point"
-					placeholder="请输入悬赏积分"
-					border="surround"
-					type="number"
-				>
+				<u--input v-model="post.point" placeholder="请输入悬赏积分" border="surround" type="number">
 					<template slot="suffix">
 						<text class="point-unit">积分</text>
 					</template>
 				</u--input>
 			</view>
 
-			<!-- 提交按钮 -->
 			<view class="submit-btn">
-				<u-button type="primary" shape="circle" text="提交修改" formType="submit" @click="submit" size="large" :loading="submitting" :customStyle="{background: 'linear-gradient(135deg, #0173de, #4cd964)'}"></u-button>
+				<u-button
+					type="primary"
+					shape="circle"
+					text="提交修改"
+					formType="submit"
+					@click="submit"
+					size="large"
+					:loading="submitting"
+					:customStyle="{ background: 'linear-gradient(135deg, #0173de, #4cd964)' }"
+				></u-button>
 			</view>
 		</view>
 
-		<!-- 加载状态 -->
 		<view v-else class="loading-wrap">
 			<u-loading-icon mode="circle" size="40"></u-loading-icon>
 			<text class="loading-text">加载中...</text>
@@ -84,16 +88,6 @@
 </template>
 
 <script>
-/**
- * post/edit.vue - 修改提问（编辑帖子）
- *
- * 功能说明：
- * - 加载已有帖子数据并回填表单
- * - 修改标题、描述、分类、悬赏积分
- * - 分类选择器自动定位到当前分类
- * - 手动表单验证
- * - 修改成功后自动跳转到帖子详情页
- */
 import { authMixin } from '@/mixins/authMixin'
 
 export default {
@@ -106,7 +100,7 @@ export default {
 		}
 
 		this.business = this.currentUser
-		var postid = option.postid ? option.postid : 0
+		const postid = option.postid ? option.postid : 0
 		this.postid = postid
 
 		this.initData()
@@ -145,7 +139,7 @@ export default {
 
 		async CateList() {
 			try {
-				var result = await uni.$u.http.post('/post/cate')
+				const result = await uni.$u.http.post('/post/cate')
 
 				if (result.code == 0) {
 					uni.$toast.error(result.msg)
@@ -161,7 +155,7 @@ export default {
 
 		async PostData() {
 			try {
-				var result = await uni.$u.http.post('/post/info', { postid: this.postid })
+				const result = await uni.$u.http.post('/post/info', { postid: this.postid })
 
 				if (result.code == 0) {
 					uni.$toast.error(result.msg, {
@@ -175,6 +169,7 @@ export default {
 				this.post = result.data.post
 				this.post.cate = result.data.post.category.name
 
+				// 遍历分类列表定位当前帖子分类的索引，用于 picker 默认选中项
 				this.CateData[0].map((item, index) => {
 					if (item.id == this.post.cateid) {
 						this.CateDefault = [index]
@@ -192,21 +187,37 @@ export default {
 			this.post.cateid = e.value[0].id
 		},
 
-		submit() {
-			if (!this.post.title || !this.post.title.trim()) {
+		async submit() {
+			const title = (this.post.title || '').trim()
+			const content = (this.post.content || '').trim()
+			const point = Number(this.post.point)
+
+			if (!title) {
 				uni.$toast.error('请填写提问标题')
 				return
 			}
-			if (!this.post.content || !this.post.content.trim()) {
+			if (title.length < 5) {
+				uni.$toast.error('标题至少需要5个字符')
+				return
+			}
+			if (!content) {
 				uni.$toast.error('请描述一下问题的详细内容')
+				return
+			}
+			if (content.length < 10) {
+				uni.$toast.error('问题描述至少需要10个字符')
 				return
 			}
 			if (!this.post.cateid) {
 				uni.$toast.error('请选择正确的提问分类')
 				return
 			}
-			if (!this.post.point || isNaN(this.post.point)) {
-				uni.$toast.error('请填写正确的悬赏积分')
+			if (isNaN(point) || point < 0) {
+				uni.$toast.error('悬赏积分必须为非负整数')
+				return
+			}
+			if (point > 10000) {
+				uni.$toast.error('悬赏积分不能超过10000')
 				return
 			}
 
@@ -214,143 +225,141 @@ export default {
 
 			this.submitting = true
 
-			var currentPostid = this.postid
+			try {
+				const result = await uni.$u.http.post('/post/edit', this.post)
 
-			uni.$u.http.post('/post/edit', this.post)
-				.then(result => {
-					this.submitting = false
+				this.submitting = false
 
-					if (result.code == 0) {
-						uni.$toast.error(result.msg)
-						return false
-					}
+				if (result.code == 0) {
+					uni.$toast.error(result.msg)
+					return false
+				}
 
-					uni.$toast.successAndBack('修改成功')
-				})
-				.catch(error => {
-					this.submitting = false
-					uni.$toast.error('提交失败，请稍后重试')
-				})
+				uni.$toast.successAndBack('修改成功')
+			} catch (error) {
+				this.submitting = false
+				uni.$toast.error('提交失败，请稍后重试')
+			}
 		}
 	}
 }
 </script>
 
 <style lang="scss">
-	.page-container {
-		min-height: 100vh;
-		background-color: #f5f7fa;
+.page-container {
+	min-height: 100vh;
+	background-color: #f5f7fa;
+}
+
+.header-section {
+	background: $zl-gradient;
+	padding: 40rpx 40rpx 60rpx;
+	position: relative;
+	overflow: hidden;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: -50%;
+		right: -20%;
+		width: 400rpx;
+		height: 400rpx;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 50%;
 	}
 
-	.header-section {
-		background: $zl-gradient;
-		padding: 40rpx 40rpx 60rpx;
-		position: relative;
-		overflow: hidden;
-
-		&::before {
-			content: '';
-			position: absolute;
-			top: -50%;
-			right: -20%;
-			width: 400rpx;
-			height: 400rpx;
-			background: rgba(255, 255, 255, 0.1);
-			border-radius: 50%;
-		}
-
-		&::after {
-			content: '';
-			position: absolute;
-			bottom: -30%;
-			left: -10%;
-			width: 300rpx;
-			height: 300rpx;
-			background: rgba(255, 255, 255, 0.08);
-			border-radius: 50%;
-		}
+	&::after {
+		content: '';
+		position: absolute;
+		bottom: -30%;
+		left: -10%;
+		width: 300rpx;
+		height: 300rpx;
+		background: rgba(255, 255, 255, 0.08);
+		border-radius: 50%;
 	}
+}
 
-	.header-content {
-		position: relative;
-		z-index: 1;
-	}
+.header-content {
+	position: relative;
+	z-index: 1;
+}
 
-	.header-title {
-		font-size: 44rpx;
-		font-weight: bold;
-		color: #fff;
+.header-title {
+	font-size: 44rpx;
+	font-weight: bold;
+	color: #fff;
+	display: block;
+	margin-bottom: 16rpx;
+}
+
+.header-desc {
+	font-size: 26rpx;
+	color: rgba(255, 255, 255, 0.9);
+	line-height: 1.5;
+}
+
+.form-section {
+	padding: 30rpx;
+	margin-top: -20rpx;
+}
+
+.form-item {
+	background: #fff;
+	border-radius: 16rpx;
+	padding: 30rpx;
+	margin-bottom: 20rpx;
+	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+
+	.form-label {
+		font-size: 32rpx;
+		font-weight: 600;
+		color: #303133;
 		display: block;
-		margin-bottom: 16rpx;
-	}
-
-	.header-desc {
-		font-size: 26rpx;
-		color: rgba(255, 255, 255, 0.9);
-		line-height: 1.5;
-	}
-
-	.form-section {
-		padding: 30rpx;
-		margin-top: -20rpx;
-	}
-
-	.form-item {
-		background: #fff;
-		border-radius: 16rpx;
-		padding: 30rpx;
 		margin-bottom: 20rpx;
-		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
-
-		.form-label {
-			font-size: 32rpx;
-			font-weight: 600;
-			color: #303133;
-			display: block;
-			margin-bottom: 20rpx;
-		}
-
-		:deep(.u-input) {
-			background: #f5f7fa;
-			border-radius: 12rpx;
-		}
-
-		:deep(.u-textarea) {
-			background: #f5f7fa;
-			border-radius: 12rpx;
-		}
 	}
 
-	.point-unit {
-		font-size: 26rpx;
-		color: #909399;
-		margin-left: 8rpx;
+	:deep(.u-input) {
+		background: #f5f7fa;
+		border-radius: 12rpx;
 	}
 
-	.submit-btn {
-		margin-top: 40rpx;
-		padding: 0 40rpx;
-
-		:deep(.u-button) {
-			background: linear-gradient(135deg, #0173de, #4cd964) !important;
-			box-shadow: 0 8rpx 24rpx rgba(1, 115, 222, 0.35);
-			font-size: 32rpx;
-			font-weight: 600;
-			height: 90rpx;
-		}
+	:deep(.u-textarea) {
+		background: #f5f7fa;
+		border-radius: 12rpx;
 	}
+}
 
-	.loading-wrap {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding-top: 200rpx;
-		gap: 16rpx;
-	}
+.point-unit {
+	font-size: 26rpx;
+	color: #909399;
+	margin-left: 8rpx;
+}
 
-	.loading-text {
-		font-size: 26rpx;
-		color: #999;
+.submit-btn {
+	margin-top: 40rpx;
+	padding: 0 40rpx;
+
+	:deep(.u-button) {
+		background: linear-gradient(135deg, #0173de, #4cd964) !important;
+		box-shadow: 0 8rpx 24rpx rgba(1, 115, 222, 0.35);
+		font-size: 32rpx;
+		font-weight: 600;
+		height: 90rpx;
 	}
+}
+
+.loading-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding-top: 200rpx;
+	gap: 16rpx;
+}
+
+.loading-text {
+	font-size: 26rpx;
+	color: #999;
+}
 </style>

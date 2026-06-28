@@ -1,134 +1,134 @@
 {
-  "easycom": {
-    "^u-(.*)": "uview-ui/components/u-$1/u-$1.vue"
-  },
-  "pages": [
-    {
-      "path": "pages/index/index",
-      "style": {
-        "navigationBarTitleText": "首页",
-        "enablePullDownRefresh": true,
-        "onReachBottomDistance": 80
-      }
-    },
-    {
-      "path": "pages/post/add",
-      "style": {
-        "navigationBarTitleText": "发布提问"
-      }
-    },
-    {
-      "path": "pages/business/index",
-      "style": {
-        "navigationBarTitleText": "会员中心"
-      }
-    }
-  ],
-  "subPackages": [
-    {
-      "root": "pages-post",
-      "name": "post",
-      "pages": [
-        {
-          "path": "info",
-          "style": {
-            "navigationBarTitleText": "帖子详情"
-          }
-        },
-        {
-          "path": "edit",
-          "style": {
-            "navigationBarTitleText": "修改提问"
-          }
-        }
-      ]
-    },
-    {
-      "root": "pages-business",
-      "name": "business",
-      "pages": [
-        {
-          "path": "login",
-          "style": {
-            "navigationBarTitleText": "用户登录"
-          }
-        },
-        {
-          "path": "profile",
-          "style": {
-            "navigationBarTitleText": "基本资料"
-          }
-        },
-        {
-          "path": "question",
-          "style": {
-            "navigationBarTitleText": "我的提问"
-          }
-        },
-        {
-          "path": "follow",
-          "style": {
-            "navigationBarTitleText": "我的关注"
-          }
-        },
-        {
-          "path": "message",
-          "style": {
-            "navigationBarTitleText": "我的私信"
-          }
-        },
-        {
-          "path": "pay",
-          "style": {
-            "navigationBarTitleText": "积分充值"
-          }
-        },
-        {
-          "path": "checkin",
-          "style": {
-            "navigationBarTitleText": "每日签到"
-          }
-        },
-        {
-          "path": "user",
-          "style": {
-            "navigationBarTitleText": "个人主页"
-          }
-        }
-      ]
-    }
-  ],
-  "globalStyle": {
-    "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "论坛社区",
-    "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8",
-    "lazyCodeLoading": "requiredComponents"
-  },
-  "tabBar": {
-    "color": "#7A7E83",
-    "selectedColor": "#3cc51f",
-    "borderStyle": "black",
-    "backgroundColor": "#ffffff",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "iconPath": "static/tabbar/home.png",
-        "selectedIconPath": "static/tabbar/home-on.png",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/post/add",
-        "iconPath": "static/tabbar/category.png",
-        "selectedIconPath": "static/tabbar/category-on.png",
-        "text": "发布"
-      },
-      {
-        "pagePath": "pages/business/index",
-        "iconPath": "static/tabbar/user.png",
-        "selectedIconPath": "static/tabbar/user-on.png",
-        "text": "我的"
-      }
-    ]
-  }
+	"easycom": {
+		"^u-(.*)": "uview-ui/components/u-$1/u-$1.vue"
+	},
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页",
+				"enablePullDownRefresh": true,
+				"onReachBottomDistance": 80
+			}
+		},
+		{
+			"path": "pages/post/add",
+			"style": {
+				"navigationBarTitleText": "发布提问"
+			}
+		},
+		{
+			"path": "pages/business/index",
+			"style": {
+				"navigationBarTitleText": "会员中心"
+			}
+		}
+	],
+	"subPackages": [
+		{
+			"root": "pages-post",
+			"name": "post",
+			"pages": [
+				{
+					"path": "info",
+					"style": {
+						"navigationBarTitleText": "帖子详情"
+					}
+				},
+				{
+					"path": "edit",
+					"style": {
+						"navigationBarTitleText": "修改提问"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages-business",
+			"name": "business",
+			"pages": [
+				{
+					"path": "login",
+					"style": {
+						"navigationBarTitleText": "用户登录"
+					}
+				},
+				{
+					"path": "profile",
+					"style": {
+						"navigationBarTitleText": "基本资料"
+					}
+				},
+				{
+					"path": "question",
+					"style": {
+						"navigationBarTitleText": "我的提问"
+					}
+				},
+				{
+					"path": "follow",
+					"style": {
+						"navigationBarTitleText": "我的关注"
+					}
+				},
+				{
+					"path": "message",
+					"style": {
+						"navigationBarTitleText": "我的私信"
+					}
+				},
+				{
+					"path": "pay",
+					"style": {
+						"navigationBarTitleText": "积分充值"
+					}
+				},
+				{
+					"path": "checkin",
+					"style": {
+						"navigationBarTitleText": "每日签到"
+					}
+				},
+				{
+					"path": "user",
+					"style": {
+						"navigationBarTitleText": "个人主页"
+					}
+				}
+			]
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "论坛社区",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8",
+		"lazyCodeLoading": "requiredComponents"
+	},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#3cc51f",
+		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-on.png",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/post/add",
+				"iconPath": "static/tabbar/category.png",
+				"selectedIconPath": "static/tabbar/category-on.png",
+				"text": "发布"
+			},
+			{
+				"pagePath": "pages/business/index",
+				"iconPath": "static/tabbar/user.png",
+				"selectedIconPath": "static/tabbar/user-on.png",
+				"text": "我的"
+			}
+		]
+	}
 }

@@ -1,104 +1,104 @@
 {
-    "name": "知了社区",
-    "appid": "__UNI__B72DF59",
-    "description": "知识的交流地",
-    "versionName": "1.0.0",
-    "versionCode": "100",
-    "transformPx": false,
-    "uniStatistics": {
-        "enable": false
-    },
-    "app-plus": {
-        "usingComponents": true,
-        "splashscreen": {
-            "alwaysShowBeforeRender": true,
-            "waiting": true,
-            "autoclose": true,
-            "delay": 0
-        },
-        "modules": {},
-        "distribute": {
-            "android": {
-                "permissions": [
-                    "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
-                    "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
-                    "<uses-permission android:name=\"android.permission.READ_CONTACTS\"/>",
-                    "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
-                    "<uses-permission android:name=\"android.permission.READ_LOGS\"/>",
-                    "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
-                    "<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
-                    "<uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>",
-                    "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
-                    "<uses-permission android:name=\"android.permission.CAMERA\"/>",
-                    "<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
-                    "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
-                    "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>",
-                    "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
-                    "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
-                    "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
-                    "<uses-permission android:name=\"android.permission.CALL_PHONE\"/>",
-                    "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
-                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
-                    "<uses-feature android:name=\"android.hardware.camera\"/>",
-                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
-                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
-                ]
-            },
-            "ios": {},
-            "sdkConfigs": {}
-        }
-    },
-    "quickapp": {},
-    "mp-weixin": {
-        "appid": "wx59a05d819ac54ff8",
-        "setting": {
-            "urlCheck": true,
-            "es6": true,
-            "postcss": true,
-            "minified": true
-        },
-        "usingComponents": true,
-        "lazyCodeLoading": "requiredComponents"
-    },
-    "mp-alipay": {
-        "usingComponents": true
-    },
-    "mp-baidu": {
-        "usingComponents": true
-    },
-    "mp-toutiao": {
-        "usingComponents": true
-    },
-    "mp-qq": {
-        "usingComponents": true
-    },
-    "h5": {
-        "template": "templateH5.html",
-        "router": {
-            "mode": "history",
-            "base": "/"
-        },
-        "devServer": {
-            "https": false,
-            "port": 7070,
-            "proxy": {
-                "/wc": {
-                    "target": "http://www.fastadmin.com/index.php/wc",
-                    "changeOrigin": true,
-                    "pathRewrite": {
-                        "^/wc": ""
-                    }
-                },
-                "/uploads": {
-                    "target": "http://www.fastadmin.com",
-                    "changeOrigin": true
-                },
-                "/assets": {
-                    "target": "http://www.fastadmin.com",
-                    "changeOrigin": true
-                }
-            }
-        },
-        "title": "zl"
-    }
+	"name": "知了社区",
+	"appid": "__UNI__B72DF59",
+	"description": "知识的交流地",
+	"versionName": "1.0.0",
+	"versionCode": "100",
+	"transformPx": false,
+	"uniStatistics": {
+		"enable": false
+	},
+	"app-plus": {
+		"usingComponents": true,
+		"splashscreen": {
+			"alwaysShowBeforeRender": true,
+			"waiting": true,
+			"autoclose": true,
+			"delay": 0
+		},
+		"modules": {},
+		"distribute": {
+			"android": {
+				"permissions": [
+					"<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
+					"<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
+					"<uses-permission android:name=\"android.permission.READ_CONTACTS\"/>",
+					"<uses-permission android:name=\"android.permission.VIBRATE\"/>",
+					"<uses-permission android:name=\"android.permission.READ_LOGS\"/>",
+					"<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
+					"<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
+					"<uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>",
+					"<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+					"<uses-permission android:name=\"android.permission.CAMERA\"/>",
+					"<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
+					"<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
+					"<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>",
+					"<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
+					"<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
+					"<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
+					"<uses-permission android:name=\"android.permission.CALL_PHONE\"/>",
+					"<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
+					"<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+					"<uses-feature android:name=\"android.hardware.camera\"/>",
+					"<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+					"<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
+				]
+			},
+			"ios": {},
+			"sdkConfigs": {}
+		}
+	},
+	"quickapp": {},
+	"mp-weixin": {
+		"appid": "wx59a05d819ac54ff8",
+		"setting": {
+			"urlCheck": true,
+			"es6": true,
+			"postcss": true,
+			"minified": true
+		},
+		"usingComponents": true,
+		"lazyCodeLoading": "requiredComponents"
+	},
+	"mp-alipay": {
+		"usingComponents": true
+	},
+	"mp-baidu": {
+		"usingComponents": true
+	},
+	"mp-toutiao": {
+		"usingComponents": true
+	},
+	"mp-qq": {
+		"usingComponents": true
+	},
+	"h5": {
+		"template": "templateH5.html",
+		"router": {
+			"mode": "history",
+			"base": "/"
+		},
+		"devServer": {
+			"https": false,
+			"port": 7070,
+			"proxy": {
+				"/wc": {
+					"target": "http://www.fastadmin.com/index.php/wc",
+					"changeOrigin": true,
+					"pathRewrite": {
+						"^/wc": ""
+					}
+				},
+				"/uploads": {
+					"target": "http://www.fastadmin.com",
+					"changeOrigin": true
+				},
+				"/assets": {
+					"target": "http://www.fastadmin.com",
+					"changeOrigin": true
+				}
+			}
+		},
+		"title": "zl"
+	}
 }

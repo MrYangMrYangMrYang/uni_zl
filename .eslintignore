@@ -1,0 +1,6 @@
+node_modules/
+unpackage/
+dist/
+src/static/
+*.min.js
+src/uni.promisify.adaptor.js

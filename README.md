@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">知了论坛</h1>
-<p align="center">基于 Uni-App + uView UI 的跨平台社区问答应用 | <strong>v0.1.0</strong></p>
+<p align="center">基于 Uni-App + uView UI 的跨平台社区问答应用 | <strong>v1.0.0</strong></p>
 
 <p align="center">
   <a href="http://8.163.98.227:8084" target="_blank">🌐 在线预览</a> •
@@ -20,9 +20,13 @@
 
 - 🎯 **分包优化**：主包体积 < 1.5MB，通过智能分包实现微信小程序体积限制合规
 - 🔧 **双端兼容**：H5 与微信小程序完美兼容，统一代码库维护
-- ⚡ **性能优化**：评论懒加载、列表分页混入、数据缓存、图片压缩
+- ⚡ **性能优化**：评论懒加载、列表分页混入、数据缓存、骨架屏、防抖节流
 - 🎨 **主题系统**：蓝绿渐变配色方案，支持一键换色
-- 🛡️ **错误边界**：完善的异常处理机制，确保用户体验流畅
+- 🛡️ **错误处理三层架构**：页面 try/catch → 请求拦截器 → 全局兜底（Vue errorHandler + unhandledrejection + window.onerror），错误分级分类记录
+- 🔐 **安全存储**：token 经 base64 编码存储 + 7 天过期自动清理，缓解 localStorage 明文泄露风险
+- 🔁 **请求重试机制**：拦截器层面可配置的退避重试策略，提升弱网体验
+- 🧪 **工程化配置**：ESLint + Prettier 统一代码规范，环境变量管理多端接口地址
+- 🧱 **Mixins 复用**：列表分页、Tab 缓存、收藏/关注状态、登录校验等逻辑抽离复用
 
 ---
 
@@ -32,10 +36,10 @@
 |:----:|:----:|------|
 | **Vue.js** | 2.6.x | 核心框架 (Options API) |
 | **Uni-App** | 2.0.2 | 跨平台开发框架 |
-| **uView UI** | 2.0.36 | UI 组件库 (全局注册) |
+| **uView UI** | 2.0.36 | UI 组件库 (全局注册) + HTTP 请求封装 |
 | **Vuex** | 3.2.x | 集中式状态管理 |
-| **flyio** | 0.6.x | HTTP 请求封装 |
 | **SCSS/Sass** | 1.63+ | CSS 预处理器 |
+| **ESLint + Prettier** | 8.x / 2.x | 代码规范与格式化 |
 
 ### 📱 支持平台
 
@@ -127,10 +131,13 @@ uni-app_wc/
 ```
 
 **关键模块：**
-- [store/index.js](src/store/index.js) - 用户状态、Token 管理
-- [services/request.js](src/services/request.js) - HTTP 拦截器、自动 Token 注入
+- [store/index.js](src/store/index.js) - 用户状态、关注/收藏缓存、安全存储
+- [services/request.js](src/services/request.js) - HTTP 拦截器、自动 Token 注入、可配置重试
 - [utils/auth.js](src/utils/auth.js) - 登录检查、用户信息获取
 - [utils/toast.js](src/utils/toast.js) - 全局提示工具（成功/失败/确认弹窗）
+- [utils/debounce.js](src/utils/debounce.js) - 防抖/节流工具
+- [utils/secure-storage.js](src/utils/secure-storage.js) - 安全存储（编码 + 过期校验）
+- [utils/error-handler.js](src/utils/error-handler.js) - 错误处理三层架构
 
 ---
 
@@ -181,8 +188,10 @@ npm run build:app-plus      # APP 构建
 #### 工具命令
 ```bash
 npm run info                # 查看项目编译信息
-npm run test:h5             # H5 单元测试
-npm run test:mp-weixin      # 小程序单元测试
+npm run lint                # ESLint 代码检查
+npm run lint:fix            # ESLint 自动修复
+npm run format              # Prettier 格式化代码
+npm run test                # 运行单元测试
 ```
 
 ---
@@ -243,17 +252,24 @@ uni-app_wc/
 │   │   └── calendar/         # 分包内组件副本
 │   │
 │   ├── 🔧 services/
-│   │   └── request.js        # HTTP 封装（拦截器/Token/错误处理）
+│   │   └── request.js        # HTTP 封装（拦截器/Token/错误处理/可配置重试）
 │   │
 │   ├── 🗄️ store/
-│   │   └── index.js          # Vuex 状态（用户信息/Token/全局标志）
+│   │   └── index.js          # Vuex 状态（用户信息/关注收藏缓存）
 │   │
 │   ├── 🛠️ utils/
 │   │   ├── auth.js           # 认证工具（登录检查/获取用户）
-│   │   └── toast.js          # 提示工具（success/error/confirm）
+│   │   ├── toast.js          # 提示工具（success/error/confirm）
+│   │   ├── debounce.js       # 防抖/节流工具（搜索输入、按钮防重复点击）
+│   │   ├── secure-storage.js # 安全存储（base64编码 + 过期校验）
+│   │   └── error-handler.js  # 错误处理三层架构（分级分类记录）
 │   │
 │   ├── 🎭 mixins/
-│   │   └── listMixin.js      # 列表分页混入（上拉加载逻辑复用）
+│   │   ├── listMixin.js      # 列表分页混入（上拉加载逻辑复用）
+│   │   ├── tabCacheMixin.js  # Tab 切换缓存（避免重复请求）
+│   │   ├── collectMixin.js   # 收藏状态管理（缓存优先 + 防重复请求）
+│   │   ├── followMixin.js    # 关注状态管理（缓存优先 + 防重复请求）
+│   │   └── authMixin.js      # 登录校验混入（统一权限拦截）
 │   │
 │   ├── 🎨 static/            # 静态资源
 │   │   ├── tabbar/           # 底部导航图标

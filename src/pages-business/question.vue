@@ -1,90 +1,77 @@
 <template>
 	<view class="content">
-		<view class='header'>
-			<view class='search'>
-			  <u-search :showAction="false" placeholder="搜索你想了解的问题..." v-model="keywords" @search="search"></u-search>
+		<view class="header">
+			<view class="search">
+				<u-search
+					:showAction="false"
+					placeholder="搜索你想了解的问题..."
+					v-model="keywords"
+					@search="search"
+				></u-search>
 			</view>
 		</view>
 
 		<view class="list">
-			<u-skeleton
-				v-if="isInitialLoading"
-				rows="10"
-				title
-				loading
-				animate
-			></u-skeleton>
-			
+			<u-skeleton v-if="isInitialLoading" rows="10" title loading animate></u-skeleton>
+
 			<block v-else>
 				<post-item v-for="(item, index) in list" :key="item.id || index" :item="item" />
-				
+
 				<u-empty v-if="list.length === 0" mode="list" text="暂无提问数据"></u-empty>
-				
+
 				<u-loadmore v-else :status="loadStatus" />
 			</block>
 		</view>
 
-		<!-- 提醒组件 -->
 		<u-toast ref="notice"></u-toast>
 	</view>
 </template>
 
 <script>
-/**
- * business/question.vue - 我的提问（帖子列表）
- *
- * 功能说明：
- * - 展示当前用户发布的所有帖子
- * - 支持下拉刷新、上拉加载更多
- * - 使用 PostItem 组件展示帖子卡片
- *
- * 使用混入：listMixin（分页加载）
- */
-	import { listMixin } from '@/mixins/listMixin'
-	import PostItem from '@/components/PostItem.vue'
-	import { mapState } from 'vuex'
+import { listMixin } from '@/mixins/listMixin'
+import PostItem from '@/components/PostItem.vue'
+import { mapState } from 'vuex'
 
-	export default {
-		mixins: [listMixin],
-		components: {
-			PostItem
-		},
-		data() {
-			return {
-				keywords: '',
-				isInitialLoading: true
+export default {
+	mixins: [listMixin],
+	components: {
+		PostItem
+	},
+	data() {
+		return {
+			keywords: '',
+			isInitialLoading: true
+		}
+	},
+	computed: {
+		...mapState(['userInfo'])
+	},
+	onLoad() {
+		this.getListData()
+	},
+	methods: {
+		async getListData() {
+			this.isLoading = true
+			try {
+				const res = await uni.$u.http.post('/user/question', {
+					busid: this.userInfo.id,
+					keywords: this.keywords,
+					page: this.page
+				})
+				this.handleResponse(res)
+			} catch (error) {
+				console.error('getListData error:', error)
+				uni.$toast.error('加载失败，请稍后重试')
+			} finally {
+				this.isInitialLoading = false
 			}
 		},
-		computed: {
-			...mapState(['userInfo'])
-		},
-		onLoad() {
-			this.getListData()
-		},
-		methods: {
-			async getListData() {
-				this.isLoading = true
-				try {
-					const res = await uni.$u.http.post('/user/question', {
-						busid: this.userInfo.id,
-						keywords: this.keywords,
-						page: this.page
-					})
-					this.handleResponse(res)
-				} catch (error) {
-					console.error('getListData error:', error)
-					uni.$toast.error('加载失败，请稍后重试')
-				} finally {
-					this.isInitialLoading = false
-				}
-			},
-			search() {
-				this.refreshList()
-			}
+		search() {
+			this.refreshList()
 		}
 	}
+}
 </script>
-
 
 <style lang="scss" scoped>
 .content {
@@ -106,7 +93,7 @@
 
 .search {
 	height: 240rpx;
-	background-image: url("/static/titlebg.png");
+	background-image: url('/static/titlebg.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: center;

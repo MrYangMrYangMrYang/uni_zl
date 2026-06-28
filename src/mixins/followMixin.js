@@ -1,41 +1,14 @@
-/**
- * 关注状态 Mixin
- *
- * 职责：封装关注状态检查与切换的通用逻辑
- * 消除 info.vue / user.vue 中 AttentionState + AttentionToggle 的重复代码
- *
- * @module mixins/followMixin
- *
- * @example
- * import { followMixin } from '@/mixins/followMixin'
- * export default {
- *   mixins: [followMixin],
- *   methods: {
- *     async init() {
- *       await this.checkFollowState(targetUserId)
- *     },
- *     async onFollowClick() {
- *       await this.toggleFollow(targetUserId)
- *     }
- *   }
- * }
- */
-
 import { getUserId } from '@/utils/auth.js'
 
 export const followMixin = {
 	data() {
 		return {
 			attention: false,
-			attentionLoaded: false
+			attentionLoaded: false,
+			followLoading: false
 		}
 	},
 	methods: {
-		/**
-		 * 检查关注状态（优先读取 Vuex 缓存）
-		 * @param {number} followId - 被查看的用户ID
-		 * @returns {Promise<boolean>} 是否已关注
-		 */
 		async checkFollowState(followId) {
 			const busid = getUserId()
 			if (!busid) {
@@ -44,6 +17,7 @@ export const followMixin = {
 				return false
 			}
 
+			// 缓存优先：命中则直接使用，避免重复请求检测接口
 			const cache = this.$store.state.followCache[followId]
 			if (cache !== undefined) {
 				this.attention = cache
@@ -52,10 +26,14 @@ export const followMixin = {
 			}
 
 			try {
-				var result = await uni.$u.http.post('/attention/check', {
-					followid: followId,
-					busid: busid
-				}, { custom: { toast: false } })
+				const result = await uni.$u.http.post(
+					'/attention/check',
+					{
+						followid: followId,
+						busid: busid
+					},
+					{ custom: { toast: false } }
+				)
 
 				this.attention = result.code == 0 ? false : true
 				this.attentionLoaded = true
@@ -67,21 +45,18 @@ export const followMixin = {
 			}
 		},
 
-		/**
-		 * 切换关注状态（关注/取消关注）
-		 * @param {number} followId - 被关注的用户ID
-		 * @returns {Promise<boolean>} 操作是否成功
-		 */
 		async toggleFollow(followId) {
+			if (this.followLoading) return
 			const busid = getUserId()
 			if (!busid) {
 				uni.$toast.error('请先登录')
 				return false
 			}
 
+			this.followLoading = true
 			try {
-				var data = { followid: followId, busid: busid }
-				var result = this.attention
+				const data = { followid: followId, busid: busid }
+				const result = this.attention
 					? await uni.$u.http.post('/attention/del', data)
 					: await uni.$u.http.post('/attention/add', data)
 
@@ -101,6 +76,8 @@ export const followMixin = {
 			} catch (error) {
 				console.error('toggleFollow error:', error)
 				uni.$toast.error('操作失败，请稍后重试')
+			} finally {
+				this.followLoading = false
 			}
 		}
 	}
