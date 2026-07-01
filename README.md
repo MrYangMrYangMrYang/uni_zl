@@ -6,7 +6,7 @@
 <p align="center">基于 Uni-App + uView UI 的跨平台社区问答应用 | <strong>v1.0.0</strong></p>
 
 <p align="center">
-  <a href="http://8.163.98.227:8084" target="_blank">🌐 在线预览</a> •
+  <a href="你的域名" target="_blank">🌐 在线预览</a> •
   <a href="#功能特性">📱 功能特性</a> •
   <a href="#技术架构">🏗️ 技术架构</a> •
   <a href="#快速开始">⚡ 快速开始</a> •
