@@ -63,6 +63,9 @@ export const listMixin = {
 				} else {
 					this.loadStatus = 'loadmore'
 				}
+
+				// 钩子：子组件可覆写以在响应成功后执行额外逻辑（如更新 tabCache）
+				this.afterResponseSuccess(newData)
 			} else {
 				if (this.page > 1) {
 					this.page--
@@ -72,6 +75,10 @@ export const listMixin = {
 				}
 				uni.$u.toast(result.msg || '数据加载失败')
 			}
-		}
+		},
+
+		// 钩子方法：响应成功后调用，子组件可覆写
+		// eslint-disable-next-line no-unused-vars
+		afterResponseSuccess(newData) {}
 	}
 }

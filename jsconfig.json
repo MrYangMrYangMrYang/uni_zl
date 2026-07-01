@@ -1,24 +1,13 @@
 {
-  "compilerOptions": {
-    "target": "ES6",
-    "module": "commonjs",
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "types": [
-      "@dcloudio/types",
-      "miniprogram-api-typings",
-      "mini-types"
-    ]
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "unpackage"
-  ]
+	"compilerOptions": {
+		"target": "ES6",
+		"module": "commonjs",
+		"allowSyntheticDefaultImports": true,
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"types": ["@dcloudio/types", "miniprogram-api-typings", "mini-types"]
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist", "unpackage"]
 }

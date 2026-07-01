@@ -37,7 +37,7 @@ export default {
 	methods: {
 		getCurrentMonth() {
 			const now = new Date()
-			return now.getFullYear() + '-' + (now.getMonth() + 1)
+			return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
 		},
 		async clickSign(day) {
 			if (this.list.includes(day)) {

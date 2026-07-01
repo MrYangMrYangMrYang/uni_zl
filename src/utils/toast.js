@@ -32,6 +32,19 @@ export default {
 		}
 	},
 
+	info(message, options = {}) {
+		const duration = options.duration || 2000
+		uni.showToast({
+			title: message,
+			icon: 'none',
+			duration
+		})
+
+		if (options.complete) {
+			setTimeout(options.complete, duration)
+		}
+	},
+
 	loading(message = '加载中...') {
 		uni.showLoading({
 			title: message,

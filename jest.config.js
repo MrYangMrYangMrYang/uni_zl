@@ -5,9 +5,12 @@ module.exports = {
 	// 测试文件匹配规则
 	testMatch: ['**/__tests__/**/*.test.js'],
 
-	// 仅收集 src 下的覆盖率
+	// 收集覆盖率范围：工具函数 + 状态管理 + 混入 + 服务层
 	collectCoverageFrom: [
 		'src/utils/**/*.js',
+		'src/store/**/*.js',
+		'src/mixins/**/*.js',
+		'src/services/**/*.js',
 		'!src/utils/error-handler.js'
 	],
 

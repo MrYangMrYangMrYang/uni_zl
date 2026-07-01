@@ -175,12 +175,19 @@ export default {
 					if (result.data.indexOf('Not Found') !== -1 || result.data.indexOf('404') !== -1) {
 						uni.$toast.error('支付服务维护中，请稍后重试')
 					} else if (result.data.indexOf('http') === 0) {
-						// H5支付宝：直接跳转支付链接
+						// H5支付：直接跳转支付链接
+						// #ifdef H5
 						window.location.href = result.data
+						// #endif
 					} else if (result.data.indexOf('<form') !== -1 || result.data.indexOf('<!DOCTYPE') !== -1) {
-						// H5支付宝：自动提交的表单HTML，写入文档触发表单提交
-						document.write(result.data)
-						document.close()
+						// H5支付表单：使用 iframe 承载避免 document.write 销毁应用状态
+						// #ifdef H5
+						const iframe = document.createElement('iframe')
+						iframe.style.cssText =
+							'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:99999;background:#fff'
+						iframe.srcdoc = result.data
+						document.body.appendChild(iframe)
+						// #endif
 					} else {
 						uni.$toast.error('支付参数异常')
 					}

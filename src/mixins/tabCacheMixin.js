@@ -22,6 +22,7 @@ export const tabCacheMixin = {
 			this.active = newActive
 
 			if (this.tabCache[newActive] != null) {
+				this.switchingTab = false
 				this.onTabCacheHit(newActive)
 			} else {
 				this.switchingTab = true

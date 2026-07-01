@@ -31,6 +31,7 @@
 import { listMixin } from '@/mixins/listMixin'
 import PostItem from '@/components/PostItem.vue'
 import { mapState } from 'vuex'
+import { debounce } from '@/utils/debounce.js'
 
 export default {
 	mixins: [listMixin],
@@ -48,6 +49,10 @@ export default {
 	},
 	onLoad() {
 		this.getListData()
+		// 创建防抖搜索函数，300ms 延迟避免频繁请求
+		this.debouncedSearch = debounce(() => {
+			this.refreshList()
+		}, 300)
 	},
 	methods: {
 		async getListData() {
@@ -67,7 +72,7 @@ export default {
 			}
 		},
 		search() {
-			this.refreshList()
+			this.debouncedSearch()
 		}
 	}
 }

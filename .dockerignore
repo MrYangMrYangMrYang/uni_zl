@@ -1,0 +1,12 @@
+node_modules
+dist
+unpackage
+.git
+.husky
+.hbuilderx
+.npm-cache
+coverage
+.nyc_output
+*.md
+.env.local
+.env.*.local

@@ -172,7 +172,12 @@
 					<view class="item" v-for="(item, index) in comlist" :key="index">
 						<view class="item-header">
 							<navigator :url="`/pages-business/user?busid=${item.busid}`" class="avatar-link">
-								<image class="avatar" mode="aspectFill" lazy-load :src="item.business.avatar_text"></image>
+								<image
+									class="avatar"
+									mode="aspectFill"
+									lazy-load
+									:src="item.business.avatar_text"
+								></image>
 							</navigator>
 							<view class="item-author">
 								<view class="author-name-row">
@@ -282,10 +287,10 @@
 					<text class="answer-title">{{ answerType === 'answer' ? '撰写回答' : '撰写评论' }}</text>
 					<u-icon name="close" size="20" color="#999" @click="AnswerShow = false"></u-icon>
 				</view>
-				<u--form labelPosition="top" :model="comment" :rules="rules" ref="answer">
+				<u--form labelPosition="top" :model="commentForm" :rules="rules" ref="answer">
 					<u-form-item prop="content" ref="content">
 						<u--textarea
-							v-model="comment.content"
+							v-model="commentForm.content"
 							:placeholder="answerType === 'answer' ? '请输入您的回答...' : '请输入您的评论...'"
 							count
 							height="150"
@@ -295,7 +300,7 @@
 						type="primary"
 						shape="circle"
 						@click="submit"
-						:disabled="!comment.content"
+						:disabled="!commentForm.content"
 						:customStyle="{ background: 'linear-gradient(135deg, #0173de, #4cd964)' }"
 					>
 						{{ answerType === 'answer' ? '提交回答' : '提交评论' }}
@@ -315,9 +320,11 @@ import { getUserInfo } from '@/utils/auth.js'
 import { followMixin } from '@/mixins/followMixin'
 import { collectMixin } from '@/mixins/collectMixin'
 import { authMixin } from '@/mixins/authMixin'
+import { sanitizeHtml } from '@/utils/sanitize-html.js'
+import { commentMixin } from '@/mixins/commentMixin'
 
 export default {
-	mixins: [followMixin, collectMixin, authMixin],
+	mixins: [followMixin, collectMixin, authMixin, commentMixin],
 
 	components: {
 		comment,
@@ -345,34 +352,17 @@ export default {
 			show: false,
 			postid: 0,
 			pid: 0,
-			comid: 0,
-			accept: 0,
 			status: '',
 			business: {},
 			post: {
 				category: {},
 				business: {}
 			},
-			MenuShow: false,
-			AnswerShow: false,
 			// 'answer'=回答帖子(pid=0)，'comment'=回复评论(pid=评论id)
 			answerType: 'answer',
-			comment: {
-				content: ''
-			},
 			comlist: [],
 			loading: true,
-			commentsLoaded: false,
-			// 正在点赞的评论ID集合，防止重复请求
-			likePending: new Set(),
-			rules: {
-				content: {
-					type: 'string',
-					required: true,
-					message: '内容不能为空',
-					trigger: ['blur', 'change']
-				}
-			}
+			commentsLoaded: false
 		}
 	},
 
@@ -392,6 +382,29 @@ export default {
 	},
 
 	methods: {
+		// ========== commentMixin 要求实现的方法 ==========
+
+		getCurrentUserId() {
+			return this.business.id || 0
+		},
+
+		getPostId() {
+			return this.postid
+		},
+
+		// 操作成功后刷新评论列表
+		refreshAfterAction() {
+			this.comlist = []
+			this.CommentData()
+		},
+
+		// 记录评论采纳状态（供 ActionMenu 权限判断）
+		onBeforeMenuOpen(comment) {
+			this.status = comment.status
+		},
+
+		// ========== 页面初始化 ==========
+
 		async initPageData() {
 			await this.PostData()
 			this.checkFollowState(this.post.business.id)
@@ -438,49 +451,15 @@ export default {
 			}
 		},
 
-		async LikeToggle(comment) {
-			if (this.likePending.has(comment.id)) return
-			if (!this.requireLogin(false)) return false
-
-			this.likePending.add(comment.id)
-			try {
-				const data = {
-					comid: comment.id,
-					postid: this.postid,
-					busid: this.business.id
-				}
-
-				const result = await uni.$u.http.post('/comment/like', data)
-
-				if (result.code == 0) {
-					uni.$toast.error(result.msg)
-					return false
-				}
-
-				uni.$toast.success(result.msg)
-
-				comment.like_status = !comment.like_status
-				comment.likes_count = comment.like_status ? ++comment.likes_count : --comment.likes_count
-			} catch (error) {
-				console.error('LikeToggle error:', error)
-				uni.$toast.error('操作失败，请稍后重试')
-			} finally {
-				this.likePending.delete(comment.id)
-			}
-		},
+		// ========== 评论操作入口 ==========
 
 		answer(comment) {
 			if (!this.requireLogin(false)) return false
 
-			// 点击评论的"更多"按钮，记录目标评论信息并打开操作菜单
 			this.pid = comment.id
-			this.comid = comment.id
-			this.status = comment.status
-			this.accept = comment.busid
-
-			this.MenuShow = true
+			this.openActionMenu(comment)
 			this.answerType = 'comment'
-			this.comment.content = ''
+			this.commentForm.content = ''
 		},
 
 		showAnswer() {
@@ -498,35 +477,14 @@ export default {
 			this.AnswerShow = true
 		},
 
-		async delcom() {
+		// 重写 submit：根据 answerType 决定 pid（answer=0, comment=this.pid）
+		submit() {
 			if (!this.requireLogin(false)) return false
-
-			try {
-				const data = {
-					postid: this.postid,
-					busid: this.business.id,
-					comid: this.comid
-				}
-
-				const result = await uni.$u.http.post('/comment/del', data)
-
-				if (result.code == 0) {
-					uni.$toast.error(result.msg)
-					return false
-				}
-
-				uni.$toast.success(result.msg)
-
-				this.MenuShow = false
-				this.AnswerShow = false
-
-				this.comlist = []
-				this.CommentData()
-			} catch (error) {
-				console.error('delcom error:', error)
-				uni.$toast.error('删除失败，请稍后重试')
-			}
+			const pid = this.answerType === 'answer' ? 0 : this.pid
+			this.submitComment(pid)
 		},
+
+		// ========== 帖子数据 ==========
 
 		async PostData() {
 			try {
@@ -548,6 +506,7 @@ export default {
 				}
 
 				this.post = result.data.post
+				this.post.content = sanitizeHtml(this.post.content || '')
 			} catch (error) {
 				console.error('PostData error:', error)
 				uni.$toast.error('加载失败，请稍后重试')
@@ -562,75 +521,6 @@ export default {
 					postid: this.postid
 				}
 			})
-		},
-
-		async select() {
-			if (!this.requireLogin(false)) return false
-
-			try {
-				const data = {
-					postid: this.postid,
-					comid: this.comid,
-					accept: this.accept
-				}
-
-				const result = await uni.$u.http.post('/post/select', data)
-
-				if (result.code == 0) {
-					uni.$toast.error(result.msg)
-					return false
-				}
-
-				uni.$toast.success(result.msg)
-
-				this.MenuShow = false
-				this.AnswerShow = false
-
-				this.comlist = []
-				this.CommentData()
-			} catch (error) {
-				console.error('select error:', error)
-				uni.$toast.error('操作失败，请稍后重试')
-			}
-		},
-
-		submit() {
-			if (!this.requireLogin(false)) return false
-
-			this.$refs.answer
-				.validate()
-				.then(async () => {
-					try {
-						const data = {
-							postid: this.postid,
-							pid: this.pid,
-							content: this.comment.content,
-							busid: this.business.id
-						}
-
-						const result = await uni.$u.http.post('/post/answer', data)
-
-						if (result.code == 0) {
-							uni.$toast.error(result.msg)
-							return false
-						}
-
-						uni.$toast.success(result.msg)
-
-						this.MenuShow = false
-						this.AnswerShow = false
-
-						this.comlist = []
-						this.CommentData()
-					} catch (error) {
-						console.error('submit error:', error)
-						uni.$toast.error('提交失败，请稍后重试')
-					}
-				})
-				.catch(error => {
-					console.log(error)
-					uni.$toast.error('内容不能为空')
-				})
 		}
 	}
 }

@@ -11,7 +11,7 @@
 
 							<!-- #ifdef MP-WEIXIN -->
 							<image
-								:src="business.avatar && business.avatar ? business.avatar_text : '/static/logo.png'"
+								:src="business.avatar ? business.avatar_text : '/static/logo.png'"
 								mode="aspectFill"
 							></image>
 							<!-- #endif -->
@@ -63,19 +63,6 @@
 				</view>
 			</view>
 
-			<view class="loading-wrapper" v-if="!business">
-				<u-skeleton
-					:loading="true"
-					:animate="true"
-					avatar
-					:avatarSize="80"
-					:rows="3"
-					:rowsWidth="['40%', '70%', '50%']"
-					:rowsHeight="['32rpx', '24rpx', '24rpx']"
-					:title="false"
-				></u-skeleton>
-			</view>
-
 			<view class="nav" v-if="business">
 				<u-tabs
 					class="nav-item"
@@ -108,11 +95,11 @@
 					<view class="card-header">
 						<view class="author-info">
 							<image
-							class="author-avatar"
-							lazy-load
-							:src="item.business.avatar_text || '/static/logo.png'"
-							mode="aspectFill"
-						></image>
+								class="author-avatar"
+								lazy-load
+								:src="item.business.avatar_text || '/static/logo.png'"
+								mode="aspectFill"
+							></image>
 							<text class="author-name">{{ item.business.nickname }}</text>
 						</view>
 						<view class="post-time">{{ item.createtime_text }}</view>
@@ -145,11 +132,11 @@
 					<view class="card-header">
 						<view class="author-info">
 							<image
-							class="author-avatar"
-							lazy-load
-							:src="item.business.avatar_text || '/static/logo.png'"
-							mode="aspectFill"
-						></image>
+								class="author-avatar"
+								lazy-load
+								:src="item.business.avatar_text || '/static/logo.png'"
+								mode="aspectFill"
+							></image>
 							<text class="author-name">{{ item.business.nickname }}</text>
 						</view>
 						<view class="post-time">{{ item.createtime_text }}</view>
@@ -176,11 +163,11 @@
 					<view class="card-header">
 						<view class="author-info">
 							<image
-							class="author-avatar"
-							lazy-load
-							:src="item.business.avatar_text || '/static/logo.png'"
-							mode="aspectFill"
-						></image>
+								class="author-avatar"
+								lazy-load
+								:src="item.business.avatar_text || '/static/logo.png'"
+								mode="aspectFill"
+							></image>
 							<text class="author-name">{{ item.business.nickname }}</text>
 						</view>
 						<!-- 使用帖子的创建时间 -->
@@ -540,13 +527,6 @@ export default {
 	background-color: rgba(255, 255, 255, 0.95);
 	position: relative;
 	z-index: 5;
-}
-
-.loading-wrapper {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 120rpx 0;
 }
 
 .list-container {

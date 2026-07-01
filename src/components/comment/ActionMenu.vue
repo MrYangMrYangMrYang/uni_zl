@@ -23,7 +23,7 @@
 					</view>
 					<text v-if="acceptStatus === 'accepted'" class="menu-text">已采纳</text>
 					<text v-else-if="acceptStatus === 'resolved'" class="menu-text">已解决</text>
-					<text v-else class="menu-text" @click.stop="$emit('accept')">采纳</text>
+					<text v-else class="menu-text">采纳</text>
 				</view>
 
 				<view v-if="showDelete" class="menu-item" @click="$emit('delete')">

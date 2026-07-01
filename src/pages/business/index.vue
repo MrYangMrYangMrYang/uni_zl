@@ -121,7 +121,7 @@ export default {
 		}
 	},
 	methods: {
-		...mapActions(['logoutSuccess']),
+		...mapActions(['logout']),
 		navTo(url) {
 			uni.navigateTo({ url })
 		},
@@ -240,7 +240,7 @@ export default {
 				content: '是否确认退出',
 				success: res => {
 					if (res.confirm) {
-						this.$store.dispatch('logout')
+						this.logout()
 					}
 				}
 			})

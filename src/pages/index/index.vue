@@ -1,6 +1,10 @@
 <template>
 	<view class="content">
-		<view class="header" :class="{ 'header-fixed': headerFixed }">
+		<view
+			class="header"
+			:class="{ 'header-fixed': headerFixed }"
+			:style="headerFixed ? 'top:' + fixedTop + 'px' : ''"
+		>
 			<view class="search">
 				<u-search
 					:showAction="false"
@@ -87,7 +91,8 @@ export default {
 			scrollTop: 0,
 			headerFixed: false,
 			headerTop: 0,
-			headerHeight: 0
+			headerHeight: 0,
+			fixedTop: 0
 		}
 	},
 
@@ -96,6 +101,17 @@ export default {
 	},
 
 	onLoad() {
+		const systemInfo = uni.getSystemInfoSync()
+		// #ifdef H5
+		this.fixedTop = 44
+		// #endif
+		// #ifdef MP-WEIXIN
+		this.fixedTop = 0
+		// #endif
+		// #ifdef APP-PLUS
+		this.fixedTop = systemInfo.statusBarHeight + 44
+		// #endif
+
 		this.initTabCache([0])
 		this.active = 0
 		this.fetchCategories()
@@ -206,6 +222,15 @@ export default {
 			this.refreshList()
 		},
 
+		// 覆写 mixin 钩子：响应成功后更新 tabCache
+		afterResponseSuccess(newData) {
+			if (this.page === 1) {
+				this.tabCache[this.active] = newData
+			} else {
+				this.tabCache[this.active] = this.list
+			}
+		},
+
 		search() {
 			this.refreshList()
 		}
@@ -226,10 +251,10 @@ export default {
 
 .header-fixed {
 	position: fixed;
-	top: 44px;
 	left: 0;
 	right: 0;
 	z-index: 10;
+	/* top 由 JS 根据平台动态设置，不再硬编码 */
 }
 
 .search {
@@ -264,111 +289,6 @@ export default {
 		bottom: 0;
 		z-index: 5;
 		border-radius: 16rpx;
-	}
-
-	.item {
-		display: flex;
-		background-color: white;
-		padding: 24rpx;
-		margin-bottom: 20rpx;
-		border-radius: 16rpx;
-		box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-		transition: all 0.3s;
-
-		&:active {
-			transform: scale(0.98);
-			background-color: $uni-bg-color-hover;
-		}
-	}
-}
-
-.business {
-	width: 100rpx;
-	height: 100rpx;
-	flex-shrink: 0;
-	margin-right: 24rpx;
-
-	.avatar {
-		width: 100%;
-		height: 100%;
-		border-radius: $uni-border-radius-circle;
-		overflow: hidden;
-		background-color: $uni-bg-color-grey;
-
-		image {
-			width: 100%;
-			height: 100%;
-		}
-	}
-
-	.author {
-		display: none;
-	}
-}
-
-.info {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-
-	.title {
-		font-size: $uni-font-size-lg;
-		font-weight: bold;
-		color: $uni-text-color;
-		margin-bottom: 12rpx;
-		line-height: 1.4;
-	}
-
-	.meta-info {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 16rpx;
-		margin-bottom: 16rpx;
-
-		.author-name {
-			font-size: $uni-font-size-sm;
-			color: $zl-primary;
-			font-weight: 500;
-		}
-
-		.createtime,
-		.category {
-			font-size: $uni-font-size-sm;
-			color: $uni-text-color-grey;
-		}
-	}
-
-	.join {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-top: auto;
-		padding-top: 16rpx;
-		border-top: 1rpx solid #f5f5f5;
-
-		.status {
-			font-size: 22rpx;
-			padding: 4rpx 12rpx;
-			border-radius: 4rpx;
-			background-color: #f0f9eb;
-			color: #67c23a;
-
-			&.unsolved {
-				background-color: #fef0f0;
-				color: #f56c6c;
-			}
-		}
-
-		.point {
-			font-size: $uni-font-size-sm;
-			color: #e6a23c;
-			font-weight: bold;
-		}
-
-		.count {
-			font-size: 22rpx;
-			color: $uni-text-color-grey;
-		}
 	}
 }
 </style>

@@ -130,11 +130,11 @@ export default {
 			try {
 				await this.CateList()
 				await this.PostData()
+				this.loaded = true
 			} catch (error) {
 				console.error('initData error:', error)
 				uni.$toast.error('页面加载失败，请返回重试')
 			}
-			this.loaded = true
 		},
 
 		async CateList() {

@@ -10,9 +10,20 @@ function encode(value) {
 	try {
 		const json = JSON.stringify(value)
 		const encoded = encodeURIComponent(json)
+		/* eslint-disable no-unreachable */
 		// #ifdef H5
 		return PREFIX + btoa(encoded)
 		// #endif
+		// #ifndef H5
+		// 小程序/App 端：将字符串转 ArrayBuffer 再 base64 编码
+		const buf = new ArrayBuffer(encoded.length)
+		const bufView = new Uint8Array(buf)
+		for (let i = 0; i < encoded.length; i++) {
+			bufView[i] = encoded.charCodeAt(i)
+		}
+		return PREFIX + uni.arrayBufferToBase64(buf)
+		// #endif
+		/* eslint-enable no-unreachable */
 	} catch (e) {
 		return value
 	}
