@@ -6,7 +6,7 @@
 <p align="center">基于 Uni-App + uView UI 的跨平台社区问答应用 | <strong>v1.0.0</strong></p>
 
 <p align="center">
-  <a href="http://8.163.98.227:8083" target="_blank">🌐 H5在线预览</a>
+  <a href="http://8.163.98.227:8084" target="_blank">🌐 H5在线预览</a>
 </p>
 
 ---
