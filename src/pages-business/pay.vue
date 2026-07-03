@@ -50,7 +50,7 @@
 				>
 					<image
 						class="pay-icon"
-						:src="item.value === 'wx' ? '/static/wx.png' : '/static/zfb.png'"
+						:src="item.value === 'wx' ? '/static/icons/wx.svg' : '/static/icons/zfb.svg'"
 						mode="aspectFit"
 					></image>
 					<view class="pay-info">
@@ -70,7 +70,7 @@
 					@click="submit"
 					shape="circle"
 					size="large"
-					:customStyle="{ background: 'linear-gradient(135deg, #0173de, #4cd964)', height: '96rpx' }"
+					:customStyle="{ background: 'var(--zl-gradient)', height: '96rpx' }"
 				></u-button>
 			</view>
 		</view>
@@ -215,7 +215,7 @@ export default {
 
 .header {
 	padding: 60rpx 40rpx 80rpx;
-	background: linear-gradient(135deg, #0173de, #4cd964);
+	background: $zl-gradient;
 	position: relative;
 
 	&::after {

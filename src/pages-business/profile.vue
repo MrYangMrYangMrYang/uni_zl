@@ -20,17 +20,21 @@
 						<u-icon name="camera" color="#fff" size="28"></u-icon>
 					</view>
 					<!-- #ifdef H5 || APP-PLUS -->
-					<image class="avatar" :src="business.avatar_text || '/static/logo.png'" mode="aspectFill"></image>
+					<image
+						class="avatar"
+						:src="business.avatar_text || '/static/images/logo.png'"
+						mode="aspectFill"
+					></image>
 					<!-- #endif -->
 
 					<!-- #ifdef MP-WEIXIN -->
 					<image
-						v-if="business.hasOwnProperty('avatar') && business.avatar"
+						v-if="business && Object.prototype.hasOwnProperty.call(business, 'avatar') && business.avatar"
 						class="avatar"
 						:src="business.avatar_text"
 						mode="aspectFill"
 					></image>
-					<image v-else class="avatar" src="/static/logo.png" mode="aspectFill"></image>
+					<image v-else class="avatar" src="/static/images/logo.png" mode="aspectFill"></image>
 					<!-- #endif -->
 				</view>
 			</view>
@@ -43,15 +47,15 @@
 				</view>
 
 				<u--form labelPosition="left" labelWidth="75" :model="business" :rules="rules" ref="profile">
-					<u-form-item label="昵称:" prop="nickname">
+					<u-form-item label="昵称:" borderBottom="false" prop="nickname">
 						<u--input v-model="business.nickname" border="none" placeholder="请输入昵称"></u--input>
 					</u-form-item>
 
-					<u-form-item label="邮箱:" prop="email">
+					<u-form-item label="邮箱:" borderBottom="false" prop="email">
 						<u--input v-model="business.email" border="none" placeholder="请输入邮箱"></u--input>
 					</u-form-item>
 
-					<u-form-item label="密码:" prop="password">
+					<u-form-item label="密码:" borderBottom="false" prop="password">
 						<u--input
 							:type="showPassword ? 'text' : 'password'"
 							v-model="business.password"
@@ -69,7 +73,7 @@
 						</u--input>
 					</u-form-item>
 
-					<u-form-item label="性别:" prop="sex_text" @click="ShowGender = true">
+					<u-form-item label="性别:" borderBottom="false" prop="sex_text" @click="ShowGender = true">
 						<u--input
 							v-model="business.sex_text"
 							readonly
@@ -116,7 +120,7 @@
 							formType="submit"
 							@click="show = true"
 							:customStyle="{
-								background: 'linear-gradient(135deg, #0173de, #4cd964)',
+								background: 'var(--zl-gradient)',
 								borderRadius: '44rpx',
 								height: '88rpx'
 							}"
@@ -162,7 +166,7 @@ export default {
 
 		this.avatar = [
 			{
-				url: this.business.avatar_text || '/static/logo.png'
+				url: this.business.avatar_text || '/static/images/logo.png'
 			}
 		]
 
@@ -184,6 +188,7 @@ export default {
 			ShowGender: false,
 			show: false,
 			showPassword: false,
+			submitting: false,
 			GenderList: [
 				{ name: '保密', value: '0' },
 				{ name: '男', value: '1' },
@@ -265,7 +270,9 @@ export default {
 		},
 
 		async submit() {
+			if (this.submitting) return
 			this.show = false
+			this.submitting = true
 
 			try {
 				await this.$refs.profile.validate()
@@ -325,8 +332,10 @@ export default {
 					}
 				})
 			} catch (error) {
-				console.log(error)
+				console.error('submit profile error:', error)
 				uni.$toast.error('请完善个人资料信息')
+			} finally {
+				this.submitting = false
 			}
 		}
 	}
@@ -338,7 +347,6 @@ export default {
 	min-height: 100vh;
 	background-color: #f7f8fc;
 	border: none !important;
-	border-top: none !important;
 }
 
 .loading-wrapper {
@@ -384,7 +392,6 @@ export default {
 	&:focus,
 	&:active {
 		outline: none !important;
-		border: none !important;
 	}
 }
 
@@ -422,7 +429,6 @@ export default {
 	box-sizing: border-box;
 	width: 100%;
 	border: none !important;
-	border-top: none !important;
 }
 
 .custom-form-item {
@@ -436,8 +442,6 @@ export default {
 	box-sizing: border-box;
 	width: 100%;
 	border: none !important;
-	border-top: none !important;
-	border-bottom: none !important;
 
 	&__label {
 		flex-shrink: 0;
@@ -471,8 +475,6 @@ export default {
 	margin-bottom: 16rpx !important;
 	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04) !important;
 	border: none !important;
-	border-top: none !important;
-	border-bottom: none !important;
 	box-sizing: border-box !important;
 	width: 100% !important;
 	position: relative;
@@ -486,8 +488,6 @@ export default {
 
 ::v-deep .u-form-item__body {
 	border: none !important;
-	border-top: none !important;
-	border-bottom: none !important;
 	padding: 0 !important;
 	width: 100%;
 	display: flex;

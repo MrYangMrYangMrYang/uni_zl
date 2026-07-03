@@ -1,5 +1,5 @@
 <template>
-	<view class="post-item" @click="goDetail">
+	<view class="post-item" @click="goDetail" role="article" :aria-label="item.title">
 		<view class="business" v-if="item.business">
 			<view class="avatar" @tap.stop="goUser">
 				<image mode="aspectFit" lazy-load :src="item.business.avatar_text"></image>

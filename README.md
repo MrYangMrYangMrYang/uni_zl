@@ -1,36 +1,55 @@
 <p align="center">
-  <img src="src/static/zl.svg" alt="知了论坛 Logo" width="120" height="120">
+  <img src="src/static/icons/zl.svg" alt="知了论坛 Logo" width="120" height="120">
 </p>
 
 <h1 align="center">知了论坛</h1>
 <p align="center">基于 Uni-App + uView UI 的跨平台社区问答应用 | <strong>v1.0.0</strong></p>
 
 <p align="center">
-  <a href="你的域名" target="_blank">🌐 在线预览</a> •
-  <a href="#功能特性">📱 功能特性</a> •
-  <a href="#技术架构">🏗️ 技术架构</a> •
-  <a href="#快速开始">⚡ 快速开始</a> •
-  <a href="#项目结构">📂 项目结构</a> •
-  <a href="#部署指南">🚀 部署指南</a>
+  <a href="http://8.163.98.227:8083" target="_blank">🌐 H5在线预览</a>
 </p>
 
 ---
+
+## 📑 目录
+
+-   [✨ 项目亮点](#项目亮点)
+-   [技术栈](#技术栈)
+-   [🎯 功能特性](#功能特性)
+-   [🏗️ 架构设计](#技术架构)
+-   [⚡ 快速开始](#快速开始)
+-   [📂 项目结构详解](#项目结构)
+-   [🎨 主题定制](#主题定制)
+-   [🔌 接口文档](#接口文档)
+-   [🚀 部署指南](#部署指南)
+-   [❓ 常见问题](#常见问题)
+-   [📊 性能指标](#性能指标)
+-   [🤝 贡献指南](#贡献指南)
+-   [📄 许可证](#许可证)
+-   [🙏 致谢](#致谢)
+
+---
+
+<a id="项目亮点"></a>
 
 ## ✨ 项目亮点
 
 -   🎯 **分包优化**：主包体积 < 1.5MB，通过智能分包实现微信小程序体积限制合规
 -   🔧 **多端兼容**：H5 / 微信小程序 / Android / iOS，一套代码覆盖 12+ 平台
--   🧱 **Mixin 复用 + 逻辑去重**：评论交互（点赞/删除/采纳/回复）抽离为 `commentMixin`，消除 info.vue 与 comment.vue 间 ~150 行重复代码；关注/收藏模式抽取为 `toggle-helper` 工厂函数
+-   🧱 **Mixin 复用 + 逻辑去重**：评论交互（点赞/删除/采纳/回复）抽离为 `commentMixin`，消除 info.vue 与 comment.vue 间 ~150 行重复代码；关注/收藏状态通过 `followMixin` + `collectMixin` 统一缓存管理
 -   ⚡ **性能优化**：评论懒加载、搜索 300ms 防抖、骨架屏、CSS 异步加载、API preconnect
 -   🛡️ **三层错误处理**：页面 try/catch → 请求拦截器 → 全局兜底（Vue errorHandler + unhandledrejection + window.onerror），错误分级分类记录
--   🔐 **安全加固**：XSS 白名单过滤（`sanitize-html.js`）、CSP 策略、Token base64 编码 + 过期自动清理、安全 HTTP Headers
+-   🔐 **安全加固**：XSS 白名单过滤（`sanitize-html.js`）、Token base64 编码 + 过期自动清理、安全 HTTP Headers
 -   🔁 **请求重试**：拦截器层面可配置的指数退避重试（500ms/1000ms...），提升弱网体验
--   🧪 **自动化测试**：Jest 5 套件 49 用例，覆盖 Store / Mixins / 工具函数
--   🔄 **CI/CD 流水线**：GitHub Actions 三阶段（lint → test → build），husky + commitlint + lint-staged 规范提交
+-   🧪 **自动化测试**：Jest 7 套件 67 用例，覆盖 Store / 工具函数 / XSS 过滤
+-   🔄 **CI 流水线**：GitHub Actions 三阶段（lint → test → build），husky + commitlint + lint-staged 规范提交
 -   🎨 **主题系统**：蓝绿渐变配色，SCSS 变量驱动，支持一键换色
+-   📡 **PWA 支持**：Service Worker 离线缓存 + Web App Manifest，H5 端可安装到桌面
 -   🐳 **Docker 部署**：多阶段构建（node 构建 + nginx 运行），最终镜像 < 20MB
 
 ---
+
+<a id="技术栈"></a>
 
 ## 技术栈
 
@@ -53,6 +72,8 @@
 | **支付宝/百度/头条**  |  ✅ 支持  | Uni-App 自动编译适配     |
 
 ---
+
+<a id="功能特性"></a>
 
 ## 🎯 功能特性
 
@@ -86,6 +107,8 @@
 
 ---
 
+<a id="技术架构"></a>
+
 ## 🏗️ 架构设计
 
 ### 📦 分包策略
@@ -109,22 +132,24 @@ uni-app_wc/
 │   ├── message.vue           # 私信消息
 │   ├── pay.vue               # 积分充值
 │   ├── checkin.vue           # 每日签到
-│   └── question.vue          # 我的提问
+│   ├── question.vue          # 我的提问
+│   └── components/           # 分包内专用组件
+│       ├── pick-regions/     # 地区选择器 + regions.json
+│       └── calendar/         # 日历组件
 │
-└── src/components/           # 【公共组件】H5 兼容层
-    ├── pick-regions/         # 地区选择器 + regions.json
-    ├── calendar/             # 日历组件
-    └── comment/              # 评论组件（递归嵌套）
+└── src/components/           # 【公共组件】
+    ├── PostItem.vue          # 帖子卡片组件
+    └── comment/              # 评论组件（递归嵌套 + 操作菜单）
 ```
 
 **为什么采用这种架构？**
 
-| 问题                   | 解决方案                          | 效果            |
-| :--------------------- | :-------------------------------- | :-------------- |
-| 微信小程序主包限制 2MB | 分包拆分业务模块                  | 主包 < 1.5MB ✅ |
-| H5 端路径解析问题      | 组件双重存储（components + 分包） | H5 完全兼容 ✅  |
-| 大文件影响首屏加载     | regions.json (127KB) 异步加载     | 不阻塞渲染 ✅   |
-| uView 组件注册失败     | Vue.use(uView) 全局注册           | 跨平台稳定 ✅   |
+| 问题                   | 解决方案                                                     | 效果            |
+| :--------------------- | :----------------------------------------------------------- | :-------------- |
+| 微信小程序主包限制 2MB | 分包拆分业务模块                                             | 主包 < 1.5MB ✅ |
+| H5 端路径解析问题      | 公共组件放主包 src/components/，分包组件放分包内 components/ | H5 完全兼容 ✅  |
+| 大文件影响首屏加载     | regions.json (127KB) 异步加载                                | 不阻塞渲染 ✅   |
+| uView 组件注册失败     | Vue.use(uView) 全局注册                                      | 跨平台稳定 ✅   |
 
 ### 🔄 数据流架构
 
@@ -139,14 +164,18 @@ uni-app_wc/
 **关键模块：**
 
 -   [store/index.js](src/store/index.js) - 用户状态、关注/收藏缓存、安全存储
--   [services/request.js](src/services/request.js) - HTTP 拦截器、自动 Token 注入、可配置重试
+-   [utils/request.js](src/utils/request.js) - HTTP 拦截器、自动 Token 注入、可配置重试
 -   [utils/auth.js](src/utils/auth.js) - 登录检查、用户信息获取
 -   [utils/toast.js](src/utils/toast.js) - 全局提示工具（成功/失败/确认弹窗）
 -   [utils/debounce.js](src/utils/debounce.js) - 防抖/节流工具
 -   [utils/secure-storage.js](src/utils/secure-storage.js) - 安全存储（编码 + 过期校验）
 -   [utils/error-handler.js](src/utils/error-handler.js) - 错误处理三层架构
+-   [utils/dedupe.js](src/utils/dedupe.js) - 通用列表去重工具
+-   [components/PostForm.vue](src/components/PostForm.vue) - 帖子表单组件（发布/编辑复用，含 uView 表单校验）
 
 ---
+
+<a id="快速开始"></a>
 
 ## ⚡ 快速开始
 
@@ -190,7 +219,7 @@ npm run dev:mp-baidu        # 百度小程序
 
 ```bash
 npm run build:h5            # H5 构建 → dist/build/h5/
-npm run build:mp-weixin     # 小程序构建 → dist/dev/mp-weixin/
+npm run build:mp-weixin     # 小程序构建 → dist/build/mp-weixin/
 npm run build:app-plus      # APP 构建
 ```
 
@@ -206,6 +235,8 @@ npm run test                # 运行单元测试
 
 ---
 
+<a id="项目结构"></a>
+
 ## 📂 项目结构详解
 
 ```
@@ -220,21 +251,18 @@ uni-app_wc/
 │   └── postcss.config.js     # CSS 后处理器配置
 │
 ├── 🌐 public/
-│   ├── index.html            # H5 入口 HTML
-│   └── .htaccess             # Apache URL 重写规则
+│   ├── index.html            # H5 入口 HTML（含 PWA meta + SW 注册）
+│   ├── manifest.json         # PWA Web App Manifest
+│   └── sw.js                 # Service Worker（离线缓存 + 自动更新）
 │
 ├── 💻 src/
 │   │
-│   ├── 🎨 components/        # 【公共组件】H5 兼容副本
-│   │   ├── pick-regions/     # 地区选择器（省市区联动）
-│   │   │   ├── pick-regions.vue    # 异步加载 + 错误边界
-│   │   │   └── regions.json        # 中国行政区划数据 (127KB)
-│   │   ├── calendar/          # 日历签到组件
-│   │   │   └── j-calendar.vue
+│   ├── 🎨 components/        # 【公共组件】
 │   │   ├── comment/           # 评论系统组件
 │   │   │   ├── comment.vue         # 递归嵌套评论
 │   │   │   └── ActionMenu.vue      # 评论操作菜单
-│   │   └── PostItem.vue      # 帖子卡片组件
+│   │   ├── PostItem.vue      # 帖子卡片组件
+│   │   └── PostForm.vue      # 帖子表单（发布/编辑复用）
 │   │
 │   ├── 📄 pages/             # 【主包】核心页面
 │   │   ├── index/
@@ -247,7 +275,6 @@ uni-app_wc/
 │   ├── 📦 pages-post/        # 【分包 1】帖子模块
 │   │   ├── info.vue          # 帖子详情（含评论懒加载）
 │   │   ├── edit.vue          # 编辑提问
-│   │   └── comment/          # 分包内组件副本
 │   │
 │   ├── 👤 pages-business/     # 【分包 2】用户业务
 │   │   ├── login.vue         # 登录页（手机号/微信）
@@ -258,11 +285,12 @@ uni-app_wc/
 │   │   ├── pay.vue           # 积分充值（自定义金额）
 │   │   ├── checkin.vue       # 每日签到（日历视图）
 │   │   ├── question.vue      # 我的提问管理
-│   │   ├── pick-regions/     # 分包内组件副本
-│   │   └── calendar/         # 分包内组件副本
-│   │
-│   ├── 🔧 services/
-│   │   └── request.js        # HTTP 封装（拦截器/Token/错误处理/可配置重试）
+│   │   └── components/          # 分包内专用组件
+│   │       ├── pick-regions/     # 地区选择器（省市区联动）
+│   │       │   ├── pick-regions.vue
+│   │       │   └── regions.json        # 中国行政区划数据 (127KB)
+│   │       └── calendar/          # 日历签到组件
+│   │           └── j-calendar.vue
 │   │
 │   ├── 🗄️ store/
 │   │   └── index.js          # Vuex 状态（用户信息/关注收藏缓存）
@@ -271,33 +299,44 @@ uni-app_wc/
 │   │   ├── auth.js           # 认证工具（登录检查/获取用户）
 │   │   ├── toast.js          # 提示工具（success/error/confirm）
 │   │   ├── debounce.js       # 防抖/节流工具（搜索输入、按钮防重复点击）
+│   │   ├── request.js        # HTTP 封装（拦截器/Token/错误处理/可配置重试）
 │   │   ├── secure-storage.js # 安全存储（base64编码 + 过期校验）
+│   │   ├── sanitize-html.js   # XSS 白名单过滤
+│   │   ├── dedupe.js          # 通用列表去重工具
 │   │   └── error-handler.js  # 错误处理三层架构（分级分类记录）
 │   │
 │   ├── 🎭 mixins/
 │   │   ├── listMixin.js      # 列表分页混入（上拉加载逻辑复用）
 │   │   ├── tabCacheMixin.js  # Tab 切换缓存（避免重复请求）
+│   │   ├── commentMixin.js   # 评论交互混入（点赞/删除/采纳/回复）
 │   │   ├── collectMixin.js   # 收藏状态管理（缓存优先 + 防重复请求）
 │   │   ├── followMixin.js    # 关注状态管理（缓存优先 + 防重复请求）
 │   │   └── authMixin.js      # 登录校验混入（统一权限拦截）
 │   │
 │   ├── 🎨 static/            # 静态资源
-│   │   ├── tabbar/           # 底部导航图标
-│   │   ├── logo.png          # Logo（已压缩至 0.22KB）
-│   │   ├── zl.svg            # SVG 图标（已优化）
-│   │   └── titlebg.png       # 头部背景图
+│   │   ├── icons/            # SVG 图标
+│   │   │   ├── zl.svg        # Logo 图标（已优化）
+│   │   │   ├── wx.svg        # 微信支付图标
+│   │   │   └── zfb.svg       # 支付宝图标
+│   │   ├── images/           # 位图资源
+│   │   │   ├── logo.png      # Logo（已压缩至 0.22KB）
+│   │   │   └── titlebg.png   # 头部背景图
+│   │   └── tabbar/           # 底部导航图标
 │   │
+│   ├── constants.js           # 全局常量（过期时间/API配置等）
 │   ├── App.vue               # 根组件（全局样式/生命周期）
 │   ├── main.js               # 应用入口（uView 注册/插件挂载）
-│   ├── uni.scss              # 全局 SCSS 变量（主题色定义）
-│   └── uni.promisify.adaptor.js  # Promise 适配器
+│   └── uni.scss              # 全局 SCSS 变量（主题色定义）
 │
-├── templateH5.html           # H5 构建模板
+├── nginx.conf               # Nginx 部署配置
+├── Dockerfile                 # Docker 多阶段构建
 ├── .gitignore                # Git 忽略规则
 └── README.md                 # 项目文档（本文件）
 ```
 
 ---
+
+<a id="主题定制"></a>
 
 ## 🎨 主题定制
 
@@ -330,6 +369,8 @@ $zl-primary-light: #facc15;
 -   操作反馈提示
 
 ---
+
+<a id="接口文档"></a>
 
 ## 🔌 接口文档
 
@@ -388,6 +429,8 @@ headers: {
 ```
 
 ---
+
+<a id="部署指南"></a>
 
 ## 🚀 部署指南
 
@@ -465,7 +508,7 @@ open http://localhost:8080
 
 ```bash
 npm run build:mp-weixin
-# 输出目录：dist/dev/mp-weixin/
+# 输出目录：dist/build/mp-weixin/
 ```
 
 #### 2️⃣ 导入开发者工具
@@ -509,6 +552,8 @@ npm run build:app-plus
 ```
 
 ---
+
+<a id="常见问题"></a>
 
 ## ❓ 常见问题
 
@@ -563,7 +608,7 @@ npm run build:app-plus
 
 **解决方案（已内置）：**
 
--   [pick-regions.vue](src/components/pick-regions/pick-regions.vue) 已实现：
+-   [pick-regions.vue](src/pages-business/components/pick-regions/pick-regions.vue) 已实现：
     -   ✅ 异步加载 + Promise 缓存
     -   ✅ 错误边界（v-if="loaded" 保护）
     -   ✅ try-catch 异常捕获
@@ -598,7 +643,7 @@ location /uploads {
 }
 ```
 
-或在 [request.js](src/services/request.js) 中添加图片路径补全逻辑。
+或在 [request.js](src/utils/request.js) 中添加图片路径补全逻辑。
 
 </details>
 
@@ -687,6 +732,8 @@ location /uploads {
 
 ---
 
+<a id="性能指标"></a>
+
 ## 📊 性能指标
 
 | 指标                |  数值   | 说明                  |
@@ -698,6 +745,8 @@ location /uploads {
 | **组件总数**        |   25+   | 含 uView + 自定义组件 |
 
 ---
+
+<a id="贡献指南"></a>
 
 ## 🤝 贡献指南
 
@@ -725,11 +774,15 @@ chore: 构建/工具链
 
 ---
 
+<a id="许可证"></a>
+
 ## 📄 许可证
 
 本项目基于 [MIT License](https://opensource.org/licenses/MIT) 开源。
 
 ---
+
+<a id="致谢"></a>
 
 ## 🙏 致谢
 

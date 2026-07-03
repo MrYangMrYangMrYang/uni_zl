@@ -1,0 +1,25 @@
+{
+	"name": "知了论坛 - IT社区问答平台",
+	"short_name": "知了论坛",
+	"description": "基于 Uni-App + uView UI 的跨平台社区问答应用",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait-primary",
+	"theme_color": "#0173de",
+	"background_color": "#f8f8f8",
+	"lang": "zh-CN",
+	"icons": [
+		{
+			"src": "/static/icons/zl.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		},
+		{
+			"src": "/static/images/logo.png",
+			"sizes": "120x120",
+			"type": "image/png"
+		}
+	]
+}

@@ -7,6 +7,7 @@ on:
     branches: [master, main]
 
 jobs:
+  # ====== 阶段 1：代码规范 ======
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -18,6 +19,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
 
+  # ====== 阶段 2：单元测试 + 覆盖率 ======
   test:
     runs-on: ubuntu-latest
     steps:
@@ -27,8 +29,15 @@ jobs:
           node-version: 18
           cache: 'npm'
       - run: npm ci
-      - run: npm test
+      - run: npm test -- --coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
+  # ====== 阶段 3：构建验证 ======
   build:
     runs-on: ubuntu-latest
     needs: [lint, test]
@@ -40,3 +49,16 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build:h5
+      - name: Upload H5 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: h5-dist
+          path: dist/build/h5/
+          retention-days: 7
+      - run: npm run build:mp-weixin
+      - name: Upload 小程序 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: mp-weixin-dist
+          path: dist/dev/mp-weixin/
+          retention-days: 7

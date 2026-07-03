@@ -32,6 +32,6 @@ const app = new Vue({
 	...App
 })
 
-require('./services/request.js')(app)
+require('./utils/request.js')(app)
 
 app.$mount()

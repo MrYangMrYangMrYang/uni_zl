@@ -127,7 +127,7 @@ export default {
 }
 
 .comment-icon {
-	background: linear-gradient(135deg, #0173de, #4cd964);
+	background: $zl-gradient;
 }
 
 .accept-icon {

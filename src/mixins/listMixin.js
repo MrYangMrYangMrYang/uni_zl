@@ -25,8 +25,11 @@ export const listMixin = {
 			this.total = 0
 			this.list = []
 			this.loadStatus = 'loadmore'
-			await this.getListData()
-			uni.stopPullDownRefresh()
+			try {
+				await this.getListData()
+			} finally {
+				uni.stopPullDownRefresh()
+			}
 		},
 
 		async loadMore() {

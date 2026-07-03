@@ -1,9 +1,9 @@
+import constants from '../constants'
+const STORAGE_PREFIX = constants.STORAGE_PREFIX
+const STORAGE_EXPIRE_SUFFIX = constants.STORAGE_EXPIRE_SUFFIX
 // 安全存储工具：对敏感数据做编码存储 + 过期校验
 // 缓解 localStorage 被直接读取时看到明文 token 的问题，并支持过期自动清理
 // 注意：前端方案无法完全防御 XSS，真正的防护需 HttpOnly Cookie（需后端配合）
-
-const EXPIRE_KEY_SUFFIX = '_expire'
-const PREFIX = 'enc:'
 
 // UTF-8 安全的 base64 编码：encodeURIComponent 先把非 ASCII 转 %XX 序列，再编码
 function encode(value) {
@@ -12,7 +12,7 @@ function encode(value) {
 		const encoded = encodeURIComponent(json)
 		/* eslint-disable no-unreachable */
 		// #ifdef H5
-		return PREFIX + btoa(encoded)
+		return STORAGE_PREFIX + btoa(encoded)
 		// #endif
 		// #ifndef H5
 		// 小程序/App 端：将字符串转 ArrayBuffer 再 base64 编码
@@ -21,7 +21,7 @@ function encode(value) {
 		for (let i = 0; i < encoded.length; i++) {
 			bufView[i] = encoded.charCodeAt(i)
 		}
-		return PREFIX + uni.arrayBufferToBase64(buf)
+		return STORAGE_PREFIX + uni.arrayBufferToBase64(buf)
 		// #endif
 		/* eslint-enable no-unreachable */
 	} catch (e) {
@@ -32,7 +32,7 @@ function encode(value) {
 function decode(raw) {
 	if (typeof raw !== 'string') return raw
 	// 兼容旧版明文存储：尝试直接 JSON.parse，成功说明是升级前的明文数据
-	if (!raw.startsWith(PREFIX)) {
+	if (!raw.startsWith(STORAGE_PREFIX)) {
 		try {
 			return JSON.parse(raw)
 		} catch (e) {
@@ -40,7 +40,7 @@ function decode(raw) {
 		}
 	}
 	try {
-		const payload = raw.slice(PREFIX.length)
+		const payload = raw.slice(STORAGE_PREFIX.length)
 		let encoded
 		// #ifdef H5
 		encoded = atob(payload)
@@ -62,9 +62,9 @@ export const secureStorage = {
 			// expireIn 为秒数，0 表示不限期（如用户主动登录的场景）
 			if (expireIn > 0) {
 				const expireAt = Date.now() + expireIn * 1000
-				uni.setStorageSync(key + EXPIRE_KEY_SUFFIX, expireAt)
+				uni.setStorageSync(key + STORAGE_EXPIRE_SUFFIX, expireAt)
 			} else {
-				uni.removeStorageSync(key + EXPIRE_KEY_SUFFIX)
+				uni.removeStorageSync(key + STORAGE_EXPIRE_SUFFIX)
 			}
 		} catch (e) {
 			console.warn('[secureStorage] set failed:', key)
@@ -74,7 +74,7 @@ export const secureStorage = {
 	get(key) {
 		try {
 			// 过期校验：到期则清理并返回空
-			const expireAt = uni.getStorageSync(key + EXPIRE_KEY_SUFFIX)
+			const expireAt = uni.getStorageSync(key + STORAGE_EXPIRE_SUFFIX)
 			if (expireAt && Date.now() > expireAt) {
 				this.remove(key)
 				return null
@@ -89,7 +89,7 @@ export const secureStorage = {
 
 	remove(key) {
 		uni.removeStorageSync(key)
-		uni.removeStorageSync(key + EXPIRE_KEY_SUFFIX)
+		uni.removeStorageSync(key + STORAGE_EXPIRE_SUFFIX)
 	}
 }
 

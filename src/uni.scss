@@ -66,6 +66,37 @@ $uni-spacing-col-lg: 24rpx;
 /* 透明度 */
 $uni-opacity-disabled: 0.3;
 
+/* 圆角阶梯 */
+$uni-border-radius-sm: 8rpx;
+$uni-border-radius-base: 16rpx;
+$uni-border-radius-lg: 24rpx;
+$uni-border-radius-circle: 50%;
+
+/* 阴影层级 */
+$uni-shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+$uni-shadow-base: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+$uni-shadow-lg: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+$uni-shadow-primary: 0 8rpx 24rpx rgba(1, 115, 222, 0.35);
+
+/* z-index 层级体系 */
+$z-index-dropdown: 900;
+$z-index-sticky: 950;
+$z-index-overlay: 980;
+$z-index-modal: 990;
+$z-index-toast: 1000;
+
+/* 过渡时长 */
+$uni-transition-fast: 0.15s;
+$uni-transition-base: 0.3s;
+$uni-transition-slow: 0.5s;
+
+/* ====== CSS 自定义属性（供内联样式和动态计算使用）====== */
+page {
+	--zl-gradient: #{$zl-gradient};
+	--zl-primary: #{$zl-primary};
+	--zl-primary-light: #{$zl-primary-light};
+}
+
 /* 文章场景相关 */
 $uni-color-title: #2c405a;
 $uni-color-subtitle: #555;

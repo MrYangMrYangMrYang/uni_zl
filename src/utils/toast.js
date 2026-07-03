@@ -1,8 +1,10 @@
-/** 提示持续时间配置（单位：毫秒） */
+import constants from '../constants'
+const TOAST_DURATION = constants.TOAST_DURATION
+
 const TOAST_CONFIG = {
-	SUCCESS_DURATION: 1200, // 成功提示1.2秒
-	ERROR_DURATION: 1500, // 错误提示1.5秒（稍长让用户看清）
-	DEFAULT_DURATION: 1000 // 默认提示时长
+	SUCCESS_DURATION: TOAST_DURATION.SUCCESS,
+	ERROR_DURATION: TOAST_DURATION.ERROR,
+	DEFAULT_DURATION: TOAST_DURATION.DEFAULT
 }
 
 export default {
@@ -33,7 +35,7 @@ export default {
 	},
 
 	info(message, options = {}) {
-		const duration = options.duration || 2000
+		const duration = options.duration || TOAST_DURATION.INFO
 		uni.showToast({
 			title: message,
 			icon: 'none',

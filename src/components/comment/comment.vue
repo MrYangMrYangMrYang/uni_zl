@@ -105,7 +105,7 @@
 						shape="circle"
 						@click="submit"
 						:disabled="!commentForm.content"
-						:customStyle="{ background: 'linear-gradient(135deg, #0173de, #4cd964)' }"
+						:customStyle="{ background: 'var(--zl-gradient)' }"
 					>
 						提交评论
 					</u-button>
@@ -133,19 +133,19 @@ export default {
 
 	props: {
 		show: { type: Boolean, default: false },
-		postid: { type: Number, require: true, default: 0 },
+		postid: { type: Number, required: true, default: 0 },
 		// 父评论ID，用于拉取该评论下的回复
-		pid: { type: Number, require: true, default: 0 },
+		pid: { type: Number, required: true, default: 0 },
 		// 评论作者ID
-		busid: { type: Number, require: true, default: 0 },
+		busid: { type: Number, required: true, default: 0 },
 		// 当前登录用户ID（browser id），用于权限判断
-		brid: { type: Number, require: true, default: 0 },
+		brid: { type: Number, required: true, default: 0 },
 		// 帖子作者ID（father id），楼主标识与采纳权限判断
-		ftrid: { type: Number, require: true, default: 0 },
+		ftrid: { type: Number, required: true, default: 0 },
 		// 已采纳评论ID（caina id），null 表示未采纳
-		cnrid: { type: Number, require: true, default: 0 },
+		cnrid: { type: Number, required: true, default: 0 },
 		// 帖子状态：'1' 已解决，'0' 未解决
-		status: { type: String, require: true, default: '0' },
+		status: { type: String, required: true, default: '0' },
 		// 当前递归深度，用于限制评论树无限嵌套
 		depth: { type: Number, default: 0 }
 	},
@@ -221,7 +221,7 @@ export default {
 				this.comlist = result.data.length > 0 ? result.data : []
 
 				// Vue.set 确保 show 属性是响应式的
-				this.comlist.map(item => {
+				this.comlist.forEach(item => {
 					Vue.set(item, 'show', false)
 				})
 			} catch (error) {

@@ -1,3 +1,5 @@
+import constants from '../constants'
+const MAX_ERROR_LOG_SIZE = constants.MAX_ERROR_LOG_SIZE
 // 错误处理三层架构：页面try/catch → 请求拦截器 → 全局兜底（本模块）
 
 /** 错误严重程度枚举 */
@@ -20,11 +22,10 @@ const ERROR_TYPE = {
 	RUNTIME: 'runtime'
 }
 
-/** 内存中的错误日志队列（最多保留 MAX_LOG_SIZE 条） */
+/** 内存中的错误日志队列（最多保留 MAX_ERROR_LOG_SIZE 条） */
 let errorLogs = []
 
 /** 错误日志最大保留条数，超出后先进先出 */
-const MAX_LOG_SIZE = 50
 
 function classifyError(error) {
 	const message = (error?.message || String(error)).toLowerCase()
@@ -66,12 +67,14 @@ function logError(errorRecord) {
 	errorRecord.category = category
 
 	errorLogs.push(errorRecord)
-	if (errorLogs.length > MAX_LOG_SIZE) {
+	if (errorLogs.length > MAX_ERROR_LOG_SIZE) {
 		errorLogs.shift()
 	}
 
 	if (process.env.NODE_ENV === 'development') {
-		console.error(`[GlobalError] ${errorRecord.timestamp} [${errorRecord.type}][${level}/${category}] ${errorRecord.message}`)
+		console.error(
+			`[GlobalError] ${errorRecord.timestamp} [${errorRecord.type}][${level}/${category}] ${errorRecord.message}`
+		)
 		if (errorRecord.stack) {
 			console.error(errorRecord.stack)
 		}

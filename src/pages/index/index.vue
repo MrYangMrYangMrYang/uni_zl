@@ -48,7 +48,7 @@
 			</view>
 
 			<block v-else>
-				<post-item v-for="(item, index) in list" :key="item.id || index" :item="item" />
+				<post-item v-for="item in list" :key="item.id" :item="item" />
 
 				<u-empty v-if="list.length === 0" mode="list" text="暂无相关帖子"></u-empty>
 
@@ -64,7 +64,7 @@
 			:bottom="120"
 			:right="30"
 			:top="400"
-			:customStyle="{ background: 'linear-gradient(135deg, #0173de, #4cd964)' }"
+			:customStyle="{ background: 'var(--zl-gradient)' }"
 			:iconStyle="{ color: '#fff', fontSize: '20px' }"
 		></u-back-top>
 	</view>

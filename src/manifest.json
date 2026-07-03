@@ -73,7 +73,7 @@
 		"usingComponents": true
 	},
 	"h5": {
-		"template": "templateH5.html",
+		"template": "public/index.html",
 		"router": {
 			"mode": "history",
 			"base": "/"

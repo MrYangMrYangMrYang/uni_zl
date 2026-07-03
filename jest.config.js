@@ -3,14 +3,19 @@ module.exports = {
 	testEnvironment: 'node',
 
 	// 测试文件匹配规则
-	testMatch: ['**/__tests__/**/*.test.js'],
+	testMatch: ['**/__tests__/**/*.test.{js,ts}'],
 
-	// 收集覆盖率范围：工具函数 + 状态管理 + 混入 + 服务层
+	// JS + TS 转换
+	transform: {
+		'^.+\\.js$': 'babel-jest',
+		'^.+\\.ts$': ['babel-jest', { presets: ['@babel/preset-typescript'] }]
+	},
+
+	// 收集覆盖率范围：工具函数 + 状态管理 + 混入
 	collectCoverageFrom: [
-		'src/utils/**/*.js',
-		'src/store/**/*.js',
+		'src/utils/**/*.{js,ts}',
+		'src/store/**/*.{js,ts}',
 		'src/mixins/**/*.js',
-		'src/services/**/*.js',
 		'!src/utils/error-handler.js'
 	],
 

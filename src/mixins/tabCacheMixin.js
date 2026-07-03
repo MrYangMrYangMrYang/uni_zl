@@ -8,6 +8,7 @@ export const tabCacheMixin = {
 	},
 	methods: {
 		initTabCache(tabIds) {
+			if (!tabIds) return
 			const cache = {}
 			tabIds.forEach(id => {
 				cache[id] = null

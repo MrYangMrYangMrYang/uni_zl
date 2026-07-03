@@ -1,11 +1,10 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import secureStorage from '@/utils/secure-storage.js'
+import constants from '../constants'
+const TOKEN_EXPIRE = constants.TOKEN_EXPIRE
 
 Vue.use(Vuex)
-
-// token 过期时间：7天（单位秒），到期后 secureStorage.get 会自动清理
-const TOKEN_EXPIRE = 7 * 24 * 3600
 
 const store = new Vuex.Store({
 	state: {
@@ -27,7 +26,6 @@ const store = new Vuex.Store({
 			state.userInfo = userInfo
 			state.isLogin = !!userInfo?.id
 			if (userInfo?.id) {
-				// 编码存储 + 过期校验，缓解 localStorage 明文泄露 token 的风险
 				secureStorage.set('business', userInfo, TOKEN_EXPIRE)
 			} else {
 				secureStorage.remove('business')
@@ -35,7 +33,7 @@ const store = new Vuex.Store({
 		},
 
 		UPDATE_FOLLOW_COUNT(state, count) {
-			state.userInfo = { ...state.userInfo, follow_count: count } // 展开新对象触发响应式
+			state.userInfo = { ...state.userInfo, follow_count: count }
 			secureStorage.set('business', state.userInfo, TOKEN_EXPIRE)
 		},
 
@@ -45,7 +43,7 @@ const store = new Vuex.Store({
 		},
 
 		SET_FOLLOW_CACHE(state, { userId, isFollow }) {
-			Vue.set(state.followCache, userId, isFollow) // Vue.set确保新增属性响应式
+			Vue.set(state.followCache, userId, isFollow)
 		},
 
 		CLEAR_FOLLOW_CACHE(state) {

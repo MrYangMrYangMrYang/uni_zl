@@ -6,12 +6,12 @@
 					<view class="avatar-wrapper">
 						<view class="avatar">
 							<!-- #ifdef H5 || APP-PLUS -->
-							<image :src="business.avatar_text || '/static/logo.png'" mode="aspectFill"></image>
+							<image :src="business.avatar_text || '/static/images/logo.png'" mode="aspectFill"></image>
 							<!-- #endif -->
 
 							<!-- #ifdef MP-WEIXIN -->
 							<image
-								:src="business.avatar ? business.avatar_text : '/static/logo.png'"
+								:src="business.avatar ? business.avatar_text : '/static/images/logo.png'"
 								mode="aspectFill"
 							></image>
 							<!-- #endif -->
@@ -23,7 +23,14 @@
 						<view class="desc">{{ business.lable || '这家伙很懒，啥都没写' }}</view>
 					</view>
 
-					<view class="btnlist" v-if="business.id != ybusiness.id && ybusiness.hasOwnProperty('id')">
+					<view
+						class="btnlist"
+						v-if="
+							business.id != ybusiness.id &&
+							ybusiness &&
+							Object.prototype.hasOwnProperty.call(ybusiness, 'id')
+						"
+					>
 						<u-button
 							v-if="attention"
 							@click="toggleFollow(busid)"
@@ -97,7 +104,7 @@
 							<image
 								class="author-avatar"
 								lazy-load
-								:src="item.business.avatar_text || '/static/logo.png'"
+								:src="item.business.avatar_text || '/static/images/logo.png'"
 								mode="aspectFill"
 							></image>
 							<text class="author-name">{{ item.business.nickname }}</text>
@@ -134,7 +141,7 @@
 							<image
 								class="author-avatar"
 								lazy-load
-								:src="item.business.avatar_text || '/static/logo.png'"
+								:src="item.business.avatar_text || '/static/images/logo.png'"
 								mode="aspectFill"
 							></image>
 							<text class="author-name">{{ item.business.nickname }}</text>
@@ -165,7 +172,7 @@
 							<image
 								class="author-avatar"
 								lazy-load
-								:src="item.business.avatar_text || '/static/logo.png'"
+								:src="item.business.avatar_text || '/static/images/logo.png'"
 								mode="aspectFill"
 							></image>
 							<text class="author-name">{{ item.business.nickname }}</text>

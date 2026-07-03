@@ -1,12 +1,17 @@
+// API 默认地址（与 @/constants 保持同步，避免跨模块 require 导致 webpack 解析异常）
+const API_H5 = '/wc'
+const API_NATIVE = 'http://www.fastadmin.com/index.php/wc'
+const DOMAIN = 'http://www.fastadmin.com'
+
 module.exports = vm => {
 	uni.$u.http.setConfig(config => {
 		// H5环境使用相对路径（配合Nginx反向代理解决跨域）
 		// #ifdef H5
-		config.baseURL = process.env.VUE_APP_API_H5 || '/wc'
+		config.baseURL = process.env.VUE_APP_API_H5 || API_H5
 		// #endif
 
 		// #ifdef MP-WEIXIN || APP-PLUS
-		config.baseURL = process.env.VUE_APP_API_NATIVE || 'http://www.fastadmin.com/index.php/wc'
+		config.baseURL = process.env.VUE_APP_API_NATIVE || API_NATIVE
 		// #endif
 
 		config.header = {
@@ -47,7 +52,7 @@ module.exports = vm => {
 		'head_img',
 		'avatar_text'
 	]
-	const domain = process.env.VUE_APP_DOMAIN || 'http://www.fastadmin.com'
+	const domain = process.env.VUE_APP_DOMAIN || DOMAIN
 
 	// 递归处理 H5 图片路径去除域名前缀
 	function processImages(data) {

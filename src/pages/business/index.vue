@@ -3,7 +3,7 @@
 		<view class="user">
 			<view class="avatar">
 				<!-- #ifdef H5 || APP-PLUS -->
-				<image v-if="!isLogin" src="/static/zl.svg"></image>
+				<image v-if="!isLogin" src="/static/icons/zl.svg"></image>
 				<image v-else :src="userInfo.avatar_text"></image>
 				<!-- #endif -->
 
@@ -106,6 +106,7 @@
 
 <script>
 import { mapState, mapActions } from 'vuex'
+import { dedupeById } from '@/utils/dedupe.js'
 
 export default {
 	data() {
@@ -147,26 +148,14 @@ export default {
 			try {
 				const busid = this.userInfo.id
 
-				// 后端可能返回重复记录，按用户ID去重后统计真实数量
-				const dedupeList = list => {
-					if (!list || list.length === 0) return []
-					const seen = new Map()
-					return list.filter(item => {
-						const key = item.business?.id || item.busid || item.id
-						if (seen.has(key)) return false
-						seen.set(key, true)
-						return true
-					})
-				}
-
 				const followRes = await uni.$u.http.post('/user/myattention', { busid }, { custom: { toast: false } })
 				if (followRes.code === 1) {
-					this.$set(this.userInfo, 'follow_count', dedupeList(followRes.data).length)
+					this.$set(this.userInfo, 'follow_count', dedupeById(followRes.data).length)
 				}
 
 				const fansRes = await uni.$u.http.post('/user/myfans', { busid }, { custom: { toast: false } })
 				if (fansRes.code === 1) {
-					this.$set(this.userInfo, 'fans_count', dedupeList(fansRes.data).length)
+					this.$set(this.userInfo, 'fans_count', dedupeById(fansRes.data).length)
 				}
 			} catch (error) {
 				console.error('fetchFollowData error:', error)
@@ -228,8 +217,8 @@ export default {
 					}
 				},
 				fail: res => {
-					console.log('登录失败')
-					console.log(res)
+					console.error('login fail:')
+					console.error('login fail detail:', res)
 					uni.$toast.error('微信登录失败')
 				}
 			})

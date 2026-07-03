@@ -4,7 +4,7 @@
 			<view class="avatar-wrap">
 				<view class="avatar">
 					<!-- #ifdef H5 || APP-PLUS -->
-					<image src="/static/zl.svg" mode="aspectFill"></image>
+					<image src="/static/icons/zl.svg" mode="aspectFill"></image>
 					<!-- #endif -->
 					<!-- #ifdef MP-WEIXIN -->
 					<open-data type="userAvatarUrl"></open-data>
@@ -75,7 +75,7 @@
 						size="large"
 						:loading="loading"
 						:customStyle="{
-							background: 'linear-gradient(135deg, #0173de, #4cd964)',
+							background: 'var(--zl-gradient)',
 							border: 'none',
 							height: '96rpx'
 						}"
@@ -90,7 +90,7 @@
 						size="large"
 						:loading="loading"
 						:customStyle="{
-							background: 'linear-gradient(135deg, #0173de, #4cd964)',
+							background: 'var(--zl-gradient)',
 							border: 'none',
 							height: '96rpx'
 						}"
@@ -178,6 +178,8 @@ export default {
 		submit() {
 			if (this.loading) return
 			this.loading = true
+
+			if (!this.$refs.bind) return
 
 			this.$refs.bind
 				.validate()

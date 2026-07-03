@@ -301,7 +301,7 @@
 						shape="circle"
 						@click="submit"
 						:disabled="!commentForm.content"
-						:customStyle="{ background: 'linear-gradient(135deg, #0173de, #4cd964)' }"
+						:customStyle="{ background: 'var(--zl-gradient)' }"
 					>
 						{{ answerType === 'answer' ? '提交回答' : '提交评论' }}
 					</u-button>
@@ -437,10 +437,10 @@ export default {
 					custom: { toast: false, retry: 2 }
 				})
 
-				this.comlist = result.data.length > 0 ? result.data : []
+				this.comlist = Array.isArray(result.data) && result.data.length > 0 ? result.data : []
 
 				// 使用 $set 确保新增的属性是响应式的
-				this.comlist.map(item => {
+				this.comlist.forEach(item => {
 					this.$set(item, 'show', false)
 				})
 			} catch (error) {
@@ -701,7 +701,7 @@ $white: #ffffff;
 	align-items: center;
 	justify-content: center;
 	padding: 16rpx 32rpx;
-	background: linear-gradient(135deg, #0173de, #4cd964);
+	background: $zl-gradient;
 	border-radius: 32rpx;
 	gap: 8rpx;
 }

@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # 安装依赖（使用 npm ci 确保可复现构建）
-RUN npm ci --production=false
+RUN npm ci
 
 # 复制源码并构建
 COPY . .
@@ -23,7 +23,7 @@ FROM nginx:alpine
 COPY --from=builder /app/dist/build/h5 /usr/share/nginx/html
 
 # 复制 Nginx 配置
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

@@ -60,16 +60,14 @@ export default {
 					return
 				}
 
-				uni.$toast.hideLoading()
 				this.list.push(day)
 				uni.$toast.successAndNavigate('签到成功，积分 +5', '/pages/business/index', true)
 			} catch (error) {
-				uni.$toast.hideLoading()
 				console.error('clickSign error:', error)
 				// 后端接口未实现时的友好提示
 				if (
 					error.statusCode === 404 ||
-					(error.data && error.data.indexOf && error.data.indexOf('Not Found') !== -1)
+					(error.data && typeof error.data === 'string' && error.data.indexOf('Not Found') !== -1)
 				) {
 					uni.$toast.error('签到功能暂未开放')
 				} else {

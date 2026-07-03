@@ -58,26 +58,22 @@
 
 		<view class="list" v-if="(active === '0' || active === '') && !switchingTab && !pageLoading">
 			<template v-if="attenlist.length > 0">
-			<view
-				v-for="(item, index) in attenlist"
-				:key="index"
-				class="swipe-action u-border-top u-border-bottom"
-			>
-				<view class="item">
-					<view class="business">
-						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
-							<image mode="aspectFit" lazy-load :src="item.business.avatar_text"></image>
-						</navigator>
-					</view>
-					<view class="info">
-						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">
-							{{ item.business.nickname }}
-						</navigator>
-						<view class="desc" v-if="item.business.lable">{{ item.business.lable }}</view>
+				<view v-for="(item, index) in attenlist" :key="index" class="swipe-action u-border-top u-border-bottom">
+					<view class="item">
+						<view class="business">
+							<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
+								<image mode="aspectFit" lazy-load :src="item.business.avatar_text"></image>
+							</navigator>
+						</view>
+						<view class="info">
+							<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">
+								{{ item.business.nickname }}
+							</navigator>
+							<view class="desc" v-if="item.business.lable">{{ item.business.lable }}</view>
+						</view>
 					</view>
 				</view>
-			</view>
-		</template>
+			</template>
 
 			<u-empty v-if="attenlist.length === 0" mode="list" text="暂无关注"></u-empty>
 			<view class="list-count" v-if="attenlist.length > 0">没有更多数据了</view>
@@ -85,26 +81,22 @@
 
 		<view class="list" v-if="active === '1' && !switchingTab && !pageLoading">
 			<template v-if="fanslist.length > 0">
-			<view
-				v-for="(item, index) in fanslist"
-				:key="index"
-				class="swipe-action u-border-top u-border-bottom"
-			>
-				<view class="item">
-					<view class="business">
-						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
-							<image mode="aspectFit" lazy-load :src="item.business.avatar_text"></image>
-						</navigator>
-					</view>
-					<view class="info">
-						<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">
-							{{ item.business.nickname }}
-						</navigator>
-						<view class="desc" v-if="item.business.lable">{{ item.business.lable }}</view>
+				<view v-for="(item, index) in fanslist" :key="index" class="swipe-action u-border-top u-border-bottom">
+					<view class="item">
+						<view class="business">
+							<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="avatar">
+								<image mode="aspectFit" lazy-load :src="item.business.avatar_text"></image>
+							</navigator>
+						</view>
+						<view class="info">
+							<navigator :url="`/pages-business/user?busid=${item.business.id}`" class="name">
+								{{ item.business.nickname }}
+							</navigator>
+							<view class="desc" v-if="item.business.lable">{{ item.business.lable }}</view>
+						</view>
 					</view>
 				</view>
-			</view>
-		</template>
+			</template>
 
 			<u-empty v-if="fanslist.length === 0" mode="list" text="暂无粉丝"></u-empty>
 			<view class="list-count" v-if="fanslist.length > 0">没有更多数据了</view>
@@ -117,6 +109,7 @@
 <script>
 import { tabCacheMixin } from '@/mixins/tabCacheMixin'
 import { authMixin } from '@/mixins/authMixin'
+import { dedupeById } from '@/utils/dedupe.js'
 
 export default {
 	mixins: [tabCacheMixin, authMixin],
@@ -170,7 +163,7 @@ export default {
 					return false
 				}
 
-				this[listField] = this.deduplicateList(result.data || [])
+				this[listField] = dedupeById(result.data || [])
 				this.tabCache[cacheKey] = this[listField]
 			} catch (error) {
 				console.error(errorLabel + ' error:', error)
@@ -209,24 +202,6 @@ export default {
 				this.fanslist = []
 				this.FansData()
 			}
-		},
-
-		// 数据去重：后端可能返回重复记录，按用户ID去重
-		deduplicateList(list) {
-			if (!list || list.length === 0) return []
-
-			const seen = new Map()
-
-			return list.filter(item => {
-				const key = item.business?.id || item.busid || item.id
-
-				if (seen.has(key)) {
-					return false
-				}
-
-				seen.set(key, true)
-				return true
-			})
 		}
 	}
 }

@@ -111,7 +111,7 @@ export default {
 	methods: {
 		clickSign(date, type) {
 			if (type == 0 && !this.isReplenishSign) {
-				console.log('————补签功能未开启————')
+				console.warn('————补签功能未开启————')
 				return
 			}
 			this.$emit('clickChange', this.nowYear + '-' + this.nowMonth + '-' + date)

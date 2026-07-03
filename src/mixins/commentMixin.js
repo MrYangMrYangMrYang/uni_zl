@@ -173,6 +173,8 @@ export const commentMixin = {
 				return false
 			}
 
+			if (!this.$refs.answer) return false
+
 			this.$refs.answer
 				.validate()
 				.then(async () => {
@@ -204,7 +206,7 @@ export const commentMixin = {
 					}
 				})
 				.catch(error => {
-					console.log(error)
+					console.error('validate error:', error)
 					uni.$toast.error('内容不能为空')
 				})
 		},

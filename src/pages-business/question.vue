@@ -15,7 +15,7 @@
 			<u-skeleton v-if="isInitialLoading" rows="10" title loading animate></u-skeleton>
 
 			<block v-else>
-				<post-item v-for="(item, index) in list" :key="item.id || index" :item="item" />
+				<post-item v-for="item in list" :key="item.id" :item="item" />
 
 				<u-empty v-if="list.length === 0" mode="list" text="暂无提问数据"></u-empty>
 
@@ -98,7 +98,7 @@ export default {
 
 .search {
 	height: 240rpx;
-	background-image: url('/static/titlebg.png');
+	background-image: url('/static/images/titlebg.png');
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: center;
