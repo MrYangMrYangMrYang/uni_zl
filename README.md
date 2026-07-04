@@ -6,7 +6,9 @@
 <p align="center">基于 Uni-App + uView UI 的跨平台社区问答应用 | <strong>v1.0.0</strong></p>
 
 <p align="center">
-  <a href="http://8.163.98.227:8084" target="_blank">🌐 H5在线预览</a>
+  <a href="http://8.163.98.227:8084" target="_blank">
+    <img src="https://img.shields.io/badge/🌐_H5在线预览-Online-brightgreen?style=for-the-badge" alt="Online Preview" />
+  </a>
 </p>
 
 ---
