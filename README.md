@@ -6,6 +6,16 @@
 <p align="center">基于 Uni-App + uView UI 的跨平台社区问答应用 | <strong>v1.0.0</strong></p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Uni--App-2.x-2b9939" alt="Uni-App">
+  <img src="https://img.shields.io/badge/Vue-2.6-4fc08d?logo=vue.js" alt="Vue">
+  <img src="https://img.shields.io/badge/uView_UI-2.0-2979ff" alt="uView UI">
+  <img src="https://img.shields.io/badge/Vuex-3.2-42b883" alt="Vuex">
+  <img src="https://img.shields.io/badge/Sass-1.63-cc6699?logo=sass" alt="Sass">
+  <img src="https://img.shields.io/badge/ESLint-8-4b32c3?logo=eslint" alt="ESLint">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
+</p>
+
+<p align="center">
   <a href="http://8.163.98.227:8084" target="_blank">
     <img src="https://img.shields.io/badge/🌐_H5在线预览-Online-brightgreen?style=for-the-badge" alt="Online Preview" />
   </a>
