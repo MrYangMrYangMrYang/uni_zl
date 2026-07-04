@@ -52,7 +52,40 @@ module.exports = vm => {
 		'head_img',
 		'avatar_text'
 	]
-	const domain = process.env.VUE_APP_DOMAIN || DOMAIN
+
+	// 构建域名候选列表：env 变量（支持逗号分隔多个域名）+ 硬编码兜底域名
+	// 即使 env 配置错误，硬编码兜底仍能正常工作，避免图片全部挂掉
+	function getDomainCandidates() {
+		const candidates = []
+		const envDomain = process.env.VUE_APP_DOMAIN
+		if (envDomain) {
+			// 支持逗号分隔多个域名
+			candidates.push(
+				...envDomain
+					.split(',')
+					.map(s => s.trim())
+					.filter(Boolean)
+			)
+		}
+		// 始终追加硬编码兜底域名（去重）
+		if (!candidates.includes(DOMAIN)) {
+			candidates.push(DOMAIN)
+		}
+		return candidates
+	}
+
+	const domainCandidates = getDomainCandidates()
+
+	// 去除字符串中的域名前缀（尝试所有候选域名）
+	function stripDomain(str) {
+		for (let j = 0; j < domainCandidates.length; j++) {
+			const d = domainCandidates[j]
+			if (str.includes(d)) {
+				return str.replace(d, '')
+			}
+		}
+		return str
+	}
 
 	// 递归处理 H5 图片路径去除域名前缀
 	function processImages(data) {
@@ -73,11 +106,19 @@ module.exports = vm => {
 			if (typeof value === 'string') {
 				// 字段名匹配或正则匹配判断图片字段
 				const isImageField = imageFields.includes(key) || /image|img|avatar/i.test(key)
-				if (isImageField && value.includes(domain)) {
-					data[key] = value.replace(domain, '')
-				} else if (key === 'content' && value.includes(domain)) {
-					// content字段是富文本HTML，需全局替换
-					data[key] = value.replace(new RegExp(domain, 'g'), '')
+				if (isImageField) {
+					data[key] = stripDomain(value)
+				} else if (key === 'content') {
+					// content字段是富文本HTML，需对所有候选域名做全局替换
+					let result = value
+					for (let j = 0; j < domainCandidates.length; j++) {
+						const d = domainCandidates[j]
+						if (result.includes(d)) {
+							// 转义域名中的正则特殊字符
+							result = result.replace(new RegExp(d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '')
+						}
+					}
+					data[key] = result
 				}
 			} else if (value && typeof value === 'object') {
 				data[key] = processImages(value)

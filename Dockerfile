@@ -23,7 +23,7 @@ FROM nginx:alpine
 COPY --from=builder /app/dist/build/h5 /usr/share/nginx/html
 
 # 复制 Nginx 配置
-COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
